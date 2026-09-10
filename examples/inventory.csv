@@ -1,0 +1,17 @@
+asset,vendor,product,version,environment,internet_exposed,criticality,owner_name,owner_email,team,status,exception_until,exception_reason,accountable,oncall,escalate_to
+HQ VPN gateway,Fortinet,FortiOS,7.2.8,production,yes,high,Dana Ruiz,dana@acme.example,Network,active,,,marco@acme.example,soc@acme.example,ciso@acme.example
+Branch VPN appliance,SonicWall,SMA 1000,12.4.3,production,yes,high,Dana Ruiz,dana@acme.example,Network,active,,,marco@acme.example,soc@acme.example,ciso@acme.example
+Intranet portal,Microsoft,SharePoint Server,2019,production,no,medium,Priya Shah,priya@acme.example,IT Ops,active,,,lena@acme.example,soc@acme.example,cio@acme.example
+File server,Microsoft,Windows Server,2022,production,no,medium,Priya Shah,priya@acme.example,IT Ops,active,,,lena@acme.example,soc@acme.example,cio@acme.example
+Engineering wiki,Atlassian,Confluence,8.5.4,production,yes,medium,Sam Lee,sam@acme.example,Apps,active,,,lena@acme.example,soc@acme.example,cio@acme.example
+Remote desktop gateway,Citrix,NetScaler Gateway,14.1,production,yes,high,Dana Ruiz,dana@acme.example,Network,active,,,marco@acme.example,soc@acme.example,ciso@acme.example
+Virtualization manager,VMware,vCenter Server,8.0u2,production,no,high,Priya Shah,priya@acme.example,IT Ops,active,,,lena@acme.example,soc@acme.example,cio@acme.example
+Mail server,Zimbra,Zimbra Collaboration Suite,10.0,production,yes,high,Priya Shah,priya@acme.example,IT Ops,active,,,lena@acme.example,soc@acme.example,cio@acme.example
+Build server,JetBrains,TeamCity,2024.03,staging,no,low,Sam Lee,sam@acme.example,Apps,active,,,lena@acme.example,soc@acme.example,cio@acme.example
+Print server,PaperCut,PaperCut MF,22.1,production,no,low,,,IT Ops,active,,,lena@acme.example,soc@acme.example,cio@acme.example
+Wi-Fi controller,Ubiquiti,UniFi OS,4.1,production,no,medium,Dana Ruiz,dana@acme.example,Network,active,,,marco@acme.example,soc@acme.example,ciso@acme.example
+RMM platform,N-able,N-central,2024.1,production,yes,high,Priya Shah,priya@acme.example,IT Ops,active,,,lena@acme.example,soc@acme.example,cio@acme.example
+Old lab firewall,Cisco,ASA 5506,9.12,test,no,low,Dana Ruiz,dana@acme.example,Network,retired,,,marco@acme.example,soc@acme.example,ciso@acme.example
+Accounting,Intuit,QuickBooks Desktop,2023,production,no,medium,Jo Park,jo@acme.example,Finance,active,,,cfo@acme.example,soc@acme.example,cfo@acme.example
+Web store,Adobe,Magento,2.4.6,production,yes,high,Sam Lee,sam@acme.example,Apps,active,,,lena@acme.example,soc@acme.example,cio@acme.example
+Legacy app server,Apache,Tomcat,9.0.85,production,yes,medium,Sam Lee,sam@acme.example,Apps,active,2026-12-31,behind WAF; replacement scheduled Q4,lena@acme.example,soc@acme.example,cio@acme.example
