@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PatchSignal replay</title>
+<style>
+:root{--bg:#f7f7f5;--card:#fff;--ink:#1c1c1a;--muted:#6b6b66;--line:#e4e4df;--now:#b3261e;--soon:#b26a00;--plan:#2b6cb0;--watch:#5f6b7a;--defer:#8a8a84;--ok:#2e7d32;--lit:#fff3c4;--litline:#e0b400}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px 16px}
+main{max-width:960px;margin:0 auto}
+h1{font-size:22px;margin:0 0 4px}h2{font-size:17px;margin:32px 0 12px}
+.sub{color:var(--muted);margin:0 0 16px}
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin:16px 0 20px}
+.tab{background:none;border:0;border-bottom:3px solid transparent;padding:8px 14px;font:inherit;font-weight:600;color:var(--muted);cursor:pointer}
+.tab.on{color:var(--ink);border-bottom-color:var(--ink)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:16px 0}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.stat b{display:block;font-size:24px;line-height:1.1}.stat span{color:var(--muted);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--line);border-radius:10px;padding:16px 18px;margin:12px 0;transition:background .3s}
+.card.now{border-left-color:var(--now)}.card.soon{border-left-color:var(--soon)}.card.plan{border-left-color:var(--plan)}.card.watch{border-left-color:var(--watch)}.card.defer{border-left-color:var(--defer)}
+.card.lit{background:var(--lit);box-shadow:0 0 0 2px var(--litline)}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;color:#fff;margin-right:8px}
+.tag.now{background:var(--now)}.tag.soon{background:var(--soon)}.tag.plan{background:var(--plan)}.tag.watch{background:var(--watch)}.tag.defer{background:var(--defer)}
+.card h3{margin:6px 0 8px;font-size:17px}
+.because{margin:0 0 12px;font-size:15px}.because a{color:var(--muted);font-size:13px;margin-left:8px}
+.ask{background:#fff7e6;border:1px solid #f1d9a5;border-radius:8px;padding:8px 12px;margin:0 0 12px;font-size:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ask button{font:inherit;font-size:13px;border:1px solid #d8b96a;background:#fff;border-radius:6px;padding:4px 10px;cursor:pointer}.ask button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin:0}dt{color:var(--muted)}dd{margin:0}
+.btns{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;font-size:14px;text-decoration:none;color:var(--ink)}
+.btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+button.btn{font:inherit;cursor:pointer}button.btn:hover{background:#f1f1ee}
+.state{margin:10px 0 0;font-size:14px;color:var(--ok);font-weight:600}.state.empty{font-weight:400;font-style:italic}
+.card.done{opacity:.6}
+details{margin-top:10px}summary{cursor:pointer;color:var(--muted);font-size:13px}
+ul.tight{margin:6px 0 0 18px;padding:0}ul.tight li{margin:2px 0}
+.fact::before{content:"Fact · ";color:var(--ok);font-weight:600}.est::before{content:"Estimate · ";color:var(--soon);font-weight:600}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+th,td{text-align:left;padding:8px 12px;border-top:1px solid var(--line);font-size:14px}th{background:#faf9f6;color:var(--muted);font-weight:600;border-top:0}
+.warn{background:#fff7e6;border:1px solid #f1d9a5;border-radius:10px;padding:10px 14px;margin:10px 0}
+.muted{color:var(--muted)}.empty{color:var(--muted);font-style:italic}code{font-size:13px;background:#f1f1ee;padding:1px 5px;border-radius:4px}
+/* plain policy */
+.plain{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin:0 0 16px}
+.plain ol{margin:0;padding-left:20px}.plain li{margin:4px 0}.plain .lbl{color:var(--muted);font-size:13px;margin:0 0 6px}
+/* tree */
+.tree{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 14px}
+.node{margin:4px 0}.node>summary{font-size:15px;padding:6px 4px;list-style:none;display:flex;align-items:center;gap:10px;border-radius:6px}
+.node>summary::before{content:"▸";color:var(--muted);width:12px;display:inline-block}.node[open]>summary::before{content:"▾"}
+.node>summary.lit,.leaf.lit{background:var(--lit);box-shadow:0 0 0 2px var(--litline)}
+.node .q{color:var(--muted);font-size:13px}.node .n{margin-left:auto;background:#f1f1ee;border-radius:999px;padding:1px 10px;font-size:13px;color:var(--muted);min-width:24px;text-align:center}
+.n.hot{background:#1c1c1a;color:#fff}
+.lvl{margin-left:22px;border-left:2px solid var(--line);padding-left:12px}
+.leaf{display:flex;align-items:center;gap:10px;padding:6px 6px;border-top:1px dashed var(--line);border-radius:6px;cursor:pointer}
+.leaf .val{min-width:150px}.leaf select{font:inherit;font-size:13px;padding:3px 6px;border:1px solid var(--line);border-radius:6px}
+.leaf .std{color:var(--muted);font-size:12px}.leaf.zero{display:none}.tree.all .leaf.zero{display:flex;opacity:.55}.leaf .n{margin-left:auto}
+.fan{margin:0 0 6px 150px;font-size:13px;list-style:none;padding:0}.fan li{margin:2px 0}.fan .tag{font-size:11px;padding:1px 7px}.fan .sup{text-decoration:line-through;color:var(--muted)}
+.chip{display:inline-block;background:#f1f1ee;border-radius:999px;padding:1px 9px;font-size:12px;margin:0 4px 4px 0}
+.toggle{font:inherit;font-size:13px;border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 10px;cursor:pointer;margin:8px 0 0}
+textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospace,monospace;border:1px solid var(--line);border-radius:8px;padding:8px}
+</style></head><body><main>
+<h1>What PatchSignal would have told you</h1>
+<p class="sub">Replay of the CISA Known Exploited Vulnerabilities catalog (version {{ s.catalog_version }}) over the last {{ s.days }} days against <b>{{ inventory_name }}</b> ({{ s.assets }} assets).</p>
+
+<div class="tabs"><button class="tab on" data-tab="notices">Notices</button><button class="tab" data-tab="policy">Policy</button></div>
+
+<section id="tab-notices">
+<div class="stats">
+  <div class="stat"><b>{{ s.advisories_in_window }}</b><span>advisories published</span></div>
+  <div class="stat"><b>{{ s.relevant_advisories }}</b><span>touched something you own</span></div>
+  <div class="stat"><b>{{ s.sent }}</b><span>notices sent</span></div>
+  <div class="stat"><b>{{ s.suppressed }}</b><span>suppressed, with a reason</span></div>
+  <div class="stat"><b>{{ s.unowned }}</b><span>had no owner on file</span></div>
+</div>
+<div class="stats" id="state-stats">
+  <div class="stat"><b data-state-total="open">{{ s.by_state.open }}</b><span>open, nobody has acted</span></div>
+  <div class="stat"><b data-state-total="acknowledged">{{ s.by_state.acknowledged }}</b><span>acknowledged</span></div>
+  <div class="stat"><b data-state-total="assigned">{{ s.by_state.assigned }}</b><span>assigned</span></div>
+  <div class="stat"><b data-state-total="fixed">{{ s.by_state.fixed }}</b><span>fixed</span></div>
+</div>
+<p class="muted">{{ s.advisories_in_window - s.relevant_advisories }} advisories were never shown to anyone because nothing in your inventory matched. That silence is the product.</p>
+
+{% for w in s.warnings %}<div class="warn">{{ w }}</div>{% endfor %}
+{% for email, n in s.over_budget.items() %}<div class="warn">{{ email }} would have received {{ n }} urgent notices in {{ s.days }} days. Consider routing lower-confidence items to a weekly digest.</div>{% endfor %}
+
+<h2>Notices, most urgent first</h2>
+{% if not sent %}<p class="empty">Nothing to send. Nothing in the inventory matched an exploited vulnerability in this window.</p>{% endif %}
+{% for d in decisions %}{% if d.sent %}{% set a = d.match.asset %}{% set adv = d.match.advisory %}
+<div class="card {{ klass[d.urgency] }}" data-id="{{ loop.index0 }}" data-leaf="{{ d.leaf_key }}">
+  <span class="tag {{ klass[d.urgency] }}" data-badge>{{ d.urgency }}</span><span class="muted">to {{ d.fixers|map(attribute='name')|join(' and ') }}{% if d.recipient_is_fallback %} (no owner on file){% endif %}{% if d.accountable %} · status to {{ d.accountable.name }}{% endif %}{% if d.escalation %} · {{ d.escalation.name }} hears only if unresolved after {{ d.delivery.escalate_after }}{% endif %}</span>
+  <h3>{{ d.headline }}</h3>
+  <p class="because"><span data-because>{{ d.plain_reason }}</span>{% if d.assessment %}<a href="#" data-show-path>Show me in the policy</a>{% endif %}</p>
+  {% for q in d.questions %}<div class="ask"><span>Question for a person: {{ q }}</span><button data-flip>Yes, it needs a person</button></div>{% endfor %}
+  <dl>
+    <dt>What is affected</dt><dd>{{ adv.vendor }} {{ adv.product }}{% if a.version %} <span class="muted">(you run {{ a.product }} {{ a.version }})</span>{% endif %}</dd>
+    <dt>Where</dt><dd>{{ a.asset }} · {{ a.environment }}{% if a.internet_exposed %} · reachable from the internet{% endif %}</dd>
+    <dt>Why it matters</dt><dd>{{ d.why_it_matters }}</dd>
+    <dt>When</dt><dd data-when>{{ when_text[d.urgency] }}{% if d.delivery.acknowledge_within %} <span class="muted">Acknowledge within {{ d.delivery.acknowledge_within }}{% if d.delivery.plan_within %}, plan within {{ d.delivery.plan_within }}{% endif %}.</span>{% endif %}</dd>
+    <dt>What to do</dt><dd>{{ d.what_to_do }}</dd>
+  </dl>
+  <p class="state {% if not d.state %}empty{% endif %}" data-state>{% if d.state %}{{ d.state.sentence }}{% else %}Nobody has acted on this yet.{% endif %}</p>
+  <div class="btns" data-key="{{ d.key }}">
+    <a class="btn primary" href="{{ adv.url }}" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor ({{ adv.cve_id }})</summary>
+    <ul class="tight">
+      {% for f in d.facts %}<li class="fact">{{ f }}</li>{% endfor %}
+      {% for e in d.estimates %}<li class="est">{{ e }}</li>{% endfor %}
+      {% if d.assessment %}{% for st in d.assessment.steps %}<li class="{{ 'fact' if st.fact else 'est' }}">{{ st.point.name }} = {{ st.value }}: {{ st.reason }}.</li>{% endfor %}
+      <li class="fact">Decided by {{ policy.name }}, row {{ d.policy_row }} → {{ d.outcome }}. SSVC vector <code>{{ d.vector }}</code>{% if d.escalate_to and d.escalate_after %}. Escalates to {{ d.escalate_to }} after {{ d.escalate_after }}{% endif %}.</li>{% endif %}
+      <li class="fact">CISA's full required action: {{ adv.required_action }}</li>
+      {% for h in d.history %}<li class="fact">{{ h.at }}: {{ h.sentence }}</li>{% endfor %}
+    </ul>
+  </details>
+</div>
+{% endif %}{% endfor %}
+
+<h2>Who would have heard from us, and how much</h2>
+{% if s.by_person %}
+<table><tr><th>Person</th><th>Full notices, to fix</th><th>One-line statuses</th><th>Hears only if stuck</th></tr>
+{% for email, row in s.by_person.items() %}<tr><td>{{ row.name }} <span class="muted">{{ email }}</span></td><td>{{ row.fixer or '' }}</td><td>{{ row.status or '' }}</td><td>{{ row.escalation or '' }}</td></tr>{% endfor %}
+</table>{% else %}<p class="empty">Nobody.</p>{% endif %}
+
+<h2>What the accountable people see</h2>
+<p class="muted">The whole message. No CVE numbers, no descriptions, no links to advisories.</p>
+{% if not s.status_lines %}<p class="empty">No asset has an accountable person on file.</p>{% endif %}
+{% for email, ds in s.status_lines.items() %}
+<div class="card">
+  <b>{{ ds[0].accountable.name }}</b> <span class="muted">{{ email }}</span>
+  <h3 style="margin-top:8px">{{ ds|selectattr('urgency','equalto','Act now')|list|length or 'No' }} urgent technology risk{{ '' if (ds|selectattr('urgency','equalto','Act now')|list|length) == 1 else 's' }} need{{ 's' if (ds|selectattr('urgency','equalto','Act now')|list|length) == 1 else '' }} attention</h3>
+  <ul class="tight" style="margin-left:0;list-style:none">{% for d in ds %}<li><span class="tag {{ klass[d.urgency] }}" style="font-size:11px">{{ d.urgency }}</span>{{ d.status_line }}</li>{% endfor %}</ul>
+</div>
+{% endfor %}
+
+<h2>Why was this not sent?</h2>
+{% if not suppressed %}<p class="empty">Nothing was suppressed.</p>{% endif %}
+{% for d in suppressed %}<div class="card"><b>{{ d.match.advisory.cve_id }}</b> on {{ d.match.asset.asset }} was not sent because {{ d.suppressed_reason }}</div>{% endfor %}
+</section>
+
+<section id="tab-policy" hidden>
+<div class="plain"><p class="lbl">Your policy, in plain words. Every exploited vulnerability that touches something you own is handled like this:</p><ol id="plain-lines">{% for line in plain_lines %}<li>{{ line }}</li>{% endfor %}</ol></div>
+<div class="stats">
+  {% for o in outcomes %}<div class="stat"><b data-total="{{ o }}">0</b><span>{{ outcome_words[o] }}</span></div>{% endfor %}
+</div>
+<p class="sub">To change the policy, change an answer below. Three questions, in order, then an answer. Everything on this page recomputes. The wording is the SEI/CERT SSVC deployer tree underneath, so an auditor can trace every decision.</p>
+<div class="tree" id="tree">
+  {% for ex in tree %}
+    <details class="node" {% if ex.count %}open{% endif %} data-node="active|{{ ex.value }}"><summary><span>Can attackers reach it? <b>{{ points[1].word(ex.value) }}</b></span><span class="n {% if ex.count %}hot{% endif %}" data-count>{{ ex.count }}</span></summary>
+    <div class="lvl">
+    {% for au in ex.children %}
+      <details class="node" {% if au.count %}open{% endif %} data-node="active|{{ ex.value }}|{{ au.value }}"><summary><span>Can the attack run by itself? <b>{{ points[2].word(au.value) }}</b></span><span class="n {% if au.count %}hot{% endif %}" data-count>{{ au.count }}</span></summary>
+      <div class="lvl">
+      {% for leaf in au.children %}
+        <div class="leaf {% if not leaf.count %}zero{% endif %}" data-leaf="{{ leaf.key }}">
+          <span class="val">How much would it hurt? <b>{{ points[3].word(leaf.value) }}</b></span>
+          <span class="muted">→</span>
+          <select data-select="{{ leaf.key }}">{% for o in outcomes %}<option value="{{ o }}" {% if o == leaf.outcome %}selected{% endif %}>{{ outcome_words[o] }}</option>{% endfor %}</select>
+          <span class="std" title="SSVC row {{ leaf.row }}">{{ leaf.outcome }}</span>
+          <span class="n {% if leaf.count %}hot{% endif %}" data-count>{{ leaf.count }}</span>
+        </div>
+        <ul class="fan" data-fan="{{ leaf.key }}"></ul>
+      {% endfor %}
+      </div></details>
+    {% endfor %}
+    </div></details>
+  {% endfor %}
+</div>
+<button class="toggle" id="show-all">Show the branches nothing landed on</button>
+<h2>What each answer means for people</h2>
+<p class="muted">The tree ends in an answer. This table is what the answer does. It is the other half of the policy, and it is four rows.</p>
+<table><tr><th>Answer</th><th>Who gets the full notice</th><th>Acknowledge within</th><th>Plan within</th><th>Escalate after</th><th>Digest allowed</th></tr>
+{% for o, dl in delivery.items() %}<tr><td><span class="tag {{ outcome_klass[o] }}">{{ outcome_words[o] }}</span></td><td>{{ 'owner and on-call' if dl.notify_oncall else ('nobody; listed under “why was this not sent”' if o == 'defer' else 'owner') }}</td><td>{{ dl.acknowledge_within or '–' }}</td><td>{{ dl.plan_within or '–' }}</td><td>{{ dl.escalate_after or '–' }}</td><td>{{ 'yes' if dl.digest_allowed else 'no' }}</td></tr>{% endfor %}
+</table>
+<p class="muted" style="margin-top:8px">Every answer also sends one status line to the accountable person on the asset, if there is one. Escalation contacts hear nothing unless the window passes.</p>
+<h2>Your edited policy file</h2>
+<p class="muted">Copy this into a file and run <code>patchsignal replay --policy yourfile.csv</code>. Unchanged until you edit an answer.</p>
+<textarea id="policy-csv" readonly></textarea>
+</section>
+
+<p class="muted" style="margin-top:32px">Facts come from CISA and the inventory. Estimates are PatchSignal's own matching and mapping and are labeled as such. An estimate never lowers urgency on its own. Versions are never assumed. Decision vocabulary: SSVC v2, SEI/CERT, Carnegie Mellon University.</p>
+</main>
+<script id="data" type="application/json">{{ client_data|safe }}</script>
+<script>
+(function(){
+  const D = JSON.parse(document.getElementById('data').textContent);
+  const PLAIN = {defer:'Defer', scheduled:'Plan update', 'out-of-cycle':'Update soon', immediate:'Act now'};
+  const outcomeOf = {}; D.rows.forEach(r => outcomeOf[r.values.join('|')] = r.outcome);
+  const pt = D.points;  // [exploitation, exposure, automatable, impact]
+  const $$ = (s, el) => Array.from((el||document).querySelectorAll(s));
+  const byId = {}; D.notices.forEach(n => byId[n.id] = n);
+
+  function showTab(name){
+    $$('.tab').forEach(x => x.classList.toggle('on', x.dataset.tab === name));
+    document.getElementById('tab-notices').hidden = name !== 'notices';
+    document.getElementById('tab-policy').hidden = name !== 'policy';
+  }
+  $$('.tab').forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
+
+  function because(leaf){
+    const v = leaf.split('|');
+    return pt[1].clause[v[1]] + ', ' + pt[2].clause[v[2]] + ', and ' + pt[3].clause[v[3]];
+  }
+  function plainLines(){
+    const imp = pt[3].values, word = x => pt[3].plain[x];
+    const runs = prefix => { const out = []; imp.forEach(h => { const o = outcomeOf[prefix + '|' + h]; if (out.length && out[out.length-1][0] === o) out[out.length-1][1].push(h); else out.push([o, [h]]); }); return out; };
+    const phrase = r => {
+      if (r.length === 1) return PLAIN[r[0][0]] + '.';
+      const main = r.reduce((a, b) => b[1].length > a[1].length ? b : a);
+      const parts = [PLAIN[main[0]]];
+      r.forEach(([o, his]) => { if (o === main[0]) return;
+        let cond;
+        if (his[his.length-1] === imp[imp.length-1]) cond = his[0] === 'very high' ? 'if it could stop the business' : 'if it would hurt ' + word(his[0]) + ' or more';
+        else if (his[0] === imp[0]) cond = 'if it would only hurt ' + word(his[his.length-1]);
+        else cond = 'if it would hurt ' + his.map(word).join(' or ');
+        parts.push(PLAIN[o] + ' ' + cond); });
+      return parts.join('; ') + '.';
+    };
+    const lead = {open:'Reachable from the internet', controlled:'Reachable from inside only', small:'Isolated'};
+    const lines = [];
+    ['open','controlled','small'].forEach(ex => {
+      const y = runs('active|' + ex + '|yes'), n = runs('active|' + ex + '|no');
+      if (JSON.stringify(y) === JSON.stringify(n)) lines.push(lead[ex] + ': ' + phrase(y));
+      else { lines.push(lead[ex] + ' and the attack can run by itself: ' + phrase(y)); lines.push(lead[ex] + ' but the attack needs a person: ' + phrase(n)); }
+    });
+    return lines;
+  }
+
+  function repaint(){
+    const totals = {}; D.outcomes.forEach(o => totals[o] = 0);
+    const counts = {};
+    D.notices.forEach(n => { if (!n.leaf) return; totals[outcomeOf[n.leaf]] += 1; counts[n.leaf] = (counts[n.leaf]||0) + 1; });
+    D.outcomes.forEach(o => { const el = document.querySelector('[data-total="'+o+'"]'); if (el) el.textContent = totals[o]; });
+    // cards
+    $$('.card[data-id]').forEach(card => {
+      const n = byId[card.dataset.id]; if (!n || !n.leaf) return;
+      const o = outcomeOf[n.leaf];
+      card.dataset.leaf = n.leaf; card.className = 'card ' + D.klass[o] + (card.classList.contains('lit') ? ' lit' : '');
+      card.querySelector('[data-badge]').textContent = D.words[o]; card.querySelector('[data-badge]').className = 'tag ' + D.klass[o];
+      const b = card.querySelector('[data-because]'); if (b) b.textContent = D.words[o] + ', because ' + because(n.leaf) + '.';
+    });
+    // tree leaves, fans, branch counts
+    $$('.leaf').forEach(leaf => {
+      const k = leaf.dataset.leaf, c = counts[k] || 0;
+      leaf.classList.toggle('zero', !c);
+      leaf.querySelector('[data-count]').textContent = c; leaf.querySelector('[data-count]').classList.toggle('hot', !!c);
+      leaf.querySelector('.std').textContent = outcomeOf[k];
+      const fan = document.querySelector('[data-fan="'+k+'"]'); fan.innerHTML = '';
+      D.notices.filter(n => n.leaf === k).forEach(n => { const li = document.createElement('li'); li.className = n.sent ? '' : 'sup'; li.dataset.id = n.id;
+        li.innerHTML = '<span class="tag '+D.klass[outcomeOf[k]]+'">'+D.words[outcomeOf[k]]+'</span>'+n.cve+' on '+n.asset+' → '+n.to+(n.sent?'':' (suppressed)'); fan.appendChild(li); });
+    });
+    $$('[data-node]').forEach(node => { const pre = node.dataset.node + '|'; let c = 0; Object.keys(counts).forEach(k => { if (k.startsWith(pre)) c += counts[k]; });
+      const el = node.querySelector(':scope > summary [data-count]'); el.textContent = c; el.classList.toggle('hot', !!c); });
+    document.getElementById('plain-lines').innerHTML = plainLines().map(l => '<li>'+l+'</li>').join('');
+    const lines = [D.header.join(',')];
+    D.rows.slice().sort((a,b) => a.row - b.row).forEach(r => lines.push([r.row, ...r.values, outcomeOf[r.values.join('|')]].join(',')));
+    document.getElementById('policy-csv').value = lines.join('\n');
+  }
+
+  function clearLit(){ $$('.lit').forEach(el => el.classList.remove('lit')); }
+  function light(leafKey, fromCard){
+    clearLit();
+    const v = leafKey.split('|');
+    ['active|'+v[1], 'active|'+v[1]+'|'+v[2]].forEach(k => { const n = document.querySelector('[data-node="'+k+'"]'); if (n) { n.open = true; n.querySelector(':scope > summary').classList.add('lit'); } });
+    const leaf = document.querySelector('.leaf[data-leaf="'+leafKey+'"]'); if (leaf) leaf.classList.add('lit');
+    if (fromCard) { showTab('policy'); leaf && leaf.scrollIntoView({block:'center', behavior:'smooth'}); }
+    else { showTab('notices'); const cards = $$('.card[data-leaf="'+leafKey+'"]'); cards.forEach(c => c.classList.add('lit')); cards[0] && cards[0].scrollIntoView({block:'start', behavior:'smooth'}); }
+  }
+  $$('[data-show-path]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); light(a.closest('.card').dataset.leaf, true); }));
+  $$('.leaf').forEach(leaf => leaf.addEventListener('click', e => { if (e.target.tagName === 'SELECT') return; light(leaf.dataset.leaf, false); }));
+  $$('[data-select]').forEach(sel => sel.addEventListener('change', () => { outcomeOf[sel.dataset.select] = sel.value; repaint(); }));
+  $$('[data-flip]').forEach(btn => btn.addEventListener('click', () => {
+    const card = btn.closest('.card'), n = byId[card.dataset.id]; if (!n) return;
+    const on = btn.classList.toggle('on'); btn.textContent = on ? 'Confirmed: needs a person (undo)' : 'Yes, it needs a person';
+    n.leaf = on ? n.altLeaf : n.origLeaf; repaint();
+  }));
+  D.notices.forEach(n => n.origLeaf = n.leaf);
+
+  // ---- buttons: what a person did. Tries the server; falls back to this browser's storage for the static report.
+  let who = ''; try { who = localStorage.getItem('ps-who') || ''; } catch (e) {}
+  const localState = (() => { try { return JSON.parse(localStorage.getItem('ps-state') || '{}'); } catch (e) { return {}; } })();
+  function sentence(st){ if (!st) return ''; if (st.sentence) return st.sentence;
+    if (st.action === 'assigned') return 'Assigned to ' + (st.note || 'someone') + ' by ' + st.by + '.';
+    if (st.action === 'not_applicable') return st.by + ' said this does not apply' + (st.note ? ': ' + st.note + '.' : '.');
+    const w = {acknowledged:'Acknowledged', fixed:'Fixed', reopened:'Reopened'}[st.action]; return w + ' by ' + st.by + (st.note ? ': ' + st.note + '.' : '.'); }
+  function paintState(card, st){
+    const el = card.querySelector('[data-state]');
+    const active = st && st.action !== 'reopened';
+    el.textContent = active ? sentence(st) : 'Nobody has acted on this yet.'; el.classList.toggle('empty', !active);
+    card.classList.toggle('done', !!(active && (st.action === 'fixed' || st.action === 'not_applicable')));
+    card.querySelectorAll('[data-action]').forEach(b => { b.hidden = b.dataset.action === 'reopened' ? !active : !!(active && (st.action === 'fixed' || st.action === 'not_applicable')); });
+    const totals = {open:0, acknowledged:0, assigned:0, fixed:0};
+    $$('.card[data-id]').forEach(c => { const n = byId[c.dataset.id]; const s2 = n && n.state && n.state.action !== 'reopened' ? n.state.action : null;
+      if (!s2) totals.open++; else if (totals[s2] !== undefined) totals[s2]++; });
+    Object.keys(totals).forEach(k => { const t = document.querySelector('[data-state-total="'+k+'"]'); if (t) t.textContent = totals[k]; });
+  }
+  $$('.card[data-id]').forEach(card => { const n = byId[card.dataset.id]; if (n && localState[n.key] && !n.state) n.state = localState[n.key]; if (n && n.state) paintState(card, n.state); });
+  $$('[data-action]').forEach(btn => btn.addEventListener('click', async () => {
+    const card = btn.closest('.card'), n = byId[card.dataset.id], action = btn.dataset.action; if (!n) return;
+    if (!who) { who = prompt('Your name, once:') || ''; try { localStorage.setItem('ps-who', who); } catch (e) {} if (!who) return; }
+    let note = '';
+    if (action === 'assigned') { note = prompt('Assign to whom?') || ''; if (!note) return; }
+    if (action === 'not_applicable') { note = prompt('Why does it not apply? (product not used, version not affected, already patched, isolated…)') || ''; if (!note) return; }
+    let st = {action, by: who, note};
+    try {
+      const res = await fetch('/act', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key: n.key, action, by: who, note})});
+      if (res.ok) st = (await res.json()).state; else throw new Error('server said no');
+    } catch (e) { localState[n.key] = st; try { localStorage.setItem('ps-state', JSON.stringify(localState)); } catch (e2) {} }
+    n.state = st; paintState(card, st);
+  }));
+  document.getElementById('show-all').addEventListener('click', e => { const t = document.getElementById('tree'); t.classList.toggle('all'); e.target.textContent = t.classList.contains('all') ? 'Hide the branches nothing landed on' : 'Show the branches nothing landed on'; });
+  repaint();
+})();
+</script>
+</body></html>

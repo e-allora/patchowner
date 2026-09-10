@@ -1,0 +1,78 @@
+"""Render the replay result as a single HTML page: notices tab and policy-tree tab."""
+from __future__ import annotations
+
+import json
+from collections import defaultdict
+from pathlib import Path
+
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+
+from .decide import ACT_NOW, DELIVERY, OUTCOME_TO_URGENCY, PLAN_UPDATE, UPDATE_SOON, WATCH, WHEN_TEXT, Decision, Summary
+from .ssvc import AUTOMATABLE, EXPOSURE, HUMAN_IMPACT, OUTCOME_WORDS, OUTCOMES, POINTS, Policy, plain_policy
+
+_env = Environment(
+    loader=FileSystemLoader(Path(__file__).parent / "templates"),
+    autoescape=select_autoescape(["html"]),
+)
+KLASS = {ACT_NOW: "now", UPDATE_SOON: "soon", PLAN_UPDATE: "plan", WATCH: "watch", "Defer": "defer"}
+OUTCOME_KLASS = {"immediate": "now", "out-of-cycle": "soon", "scheduled": "plan", "defer": "defer"}
+
+
+def build_tree(policy: Policy, decisions: list[Decision]) -> list[dict]:
+    """The active-exploitation subtree: exposure -> automatable -> human impact -> leaf, with notice counts."""
+    by_leaf: dict[tuple[str, ...], list[Decision]] = defaultdict(list)
+    for d in decisions:
+        if d.assessment:
+            by_leaf[d.assessment.values].append(d)
+    tree = []
+    for ex in reversed(EXPOSURE.values):  # internet first: the branch a busy person cares about
+        ex_node = {"value": ex, "count": 0, "children": []}
+        for auto in AUTOMATABLE.values:
+            auto_node = {"value": auto, "count": 0, "children": []}
+            for hi in HUMAN_IMPACT.values:
+                values = ("active", ex, auto, hi)
+                outcome, row = policy.outcome_for(values)
+                leaf_decisions = by_leaf.get(values, [])
+                auto_node["children"].append({
+                    "value": hi, "key": "|".join(values), "row": row, "outcome": outcome,
+                    "count": len(leaf_decisions), "notices": leaf_decisions,
+                })
+                auto_node["count"] += len(leaf_decisions)
+            ex_node["children"].append(auto_node)
+            ex_node["count"] += auto_node["count"]
+        tree.append(ex_node)
+    return tree
+
+
+def _client_data(policy: Policy, decisions: list[Decision]) -> str:
+    """What the page needs to relabel a leaf and recompute counts without a server."""
+    notices = [
+        {"id": i, "key": d.key, "leaf": d.leaf_key, "altLeaf": d.alt_leaf_key, "question": bool(d.questions), "sent": d.sent,
+         "cve": d.match.advisory.cve_id, "asset": d.match.asset.asset, "to": d.recipient_email,
+         "state": {"action": d.state.action, "by": d.state.by, "note": d.state.note, "sentence": d.state.sentence} if d.state else None}
+        for i, d in enumerate(decisions)
+    ]
+    rows = [{"row": row, "values": list(values), "outcome": outcome} for values, (outcome, row) in policy.rows.items()]
+    return json.dumps({
+        "notices": notices, "rows": rows, "header": policy.header,
+        "words": OUTCOME_TO_URGENCY, "klass": OUTCOME_KLASS, "outcomes": list(OUTCOMES),
+        "delivery": {o: {"ack": dl.acknowledge_within, "plan": dl.plan_within, "esc": dl.escalate_after, "oncall": dl.notify_oncall} for o, dl in DELIVERY.items()},
+        "points": [{"name": pt.name, "question": pt.question, "values": list(pt.values), "plain": pt.plain, "clause": pt.clause} for pt in POINTS],
+    })
+
+
+def render_html(summary: Summary, decisions: list[Decision], policy: Policy, *, inventory_name: str) -> str:
+    tpl = _env.get_template("report.html")
+    return tpl.render(
+        s=summary, inventory_name=inventory_name, policy=policy,
+        decisions=decisions,
+        sent=[d for d in decisions if d.sent],
+        suppressed=[d for d in decisions if not d.sent],
+        when_text=WHEN_TEXT, klass=KLASS, outcome_klass=OUTCOME_KLASS, outcomes=OUTCOMES, points=POINTS,
+        urgencies=[ACT_NOW, UPDATE_SOON, PLAN_UPDATE, WATCH],
+        tree=build_tree(policy, decisions),
+        plain_lines=plain_policy(policy),
+        delivery=DELIVERY,
+        outcome_words=OUTCOME_WORDS,
+        client_data=_client_data(policy, decisions),
+    )

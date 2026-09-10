@@ -1,0 +1,1518 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PatchSignal replay</title>
+<style>
+:root{--bg:#f7f7f5;--card:#fff;--ink:#1c1c1a;--muted:#6b6b66;--line:#e4e4df;--now:#b3261e;--soon:#b26a00;--plan:#2b6cb0;--watch:#5f6b7a;--defer:#8a8a84;--ok:#2e7d32;--lit:#fff3c4;--litline:#e0b400}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px 16px}
+main{max-width:960px;margin:0 auto}
+h1{font-size:22px;margin:0 0 4px}h2{font-size:17px;margin:32px 0 12px}
+.sub{color:var(--muted);margin:0 0 16px}
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin:16px 0 20px}
+.tab{background:none;border:0;border-bottom:3px solid transparent;padding:8px 14px;font:inherit;font-weight:600;color:var(--muted);cursor:pointer}
+.tab.on{color:var(--ink);border-bottom-color:var(--ink)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:16px 0}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.stat b{display:block;font-size:24px;line-height:1.1}.stat span{color:var(--muted);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--line);border-radius:10px;padding:16px 18px;margin:12px 0;transition:background .3s}
+.card.now{border-left-color:var(--now)}.card.soon{border-left-color:var(--soon)}.card.plan{border-left-color:var(--plan)}.card.watch{border-left-color:var(--watch)}.card.defer{border-left-color:var(--defer)}
+.card.lit{background:var(--lit);box-shadow:0 0 0 2px var(--litline)}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;color:#fff;margin-right:8px}
+.tag.now{background:var(--now)}.tag.soon{background:var(--soon)}.tag.plan{background:var(--plan)}.tag.watch{background:var(--watch)}.tag.defer{background:var(--defer)}
+.card h3{margin:6px 0 8px;font-size:17px}
+.because{margin:0 0 12px;font-size:15px}.because a{color:var(--muted);font-size:13px;margin-left:8px}
+.ask{background:#fff7e6;border:1px solid #f1d9a5;border-radius:8px;padding:8px 12px;margin:0 0 12px;font-size:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ask button{font:inherit;font-size:13px;border:1px solid #d8b96a;background:#fff;border-radius:6px;padding:4px 10px;cursor:pointer}.ask button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin:0}dt{color:var(--muted)}dd{margin:0}
+.btns{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;font-size:14px;text-decoration:none;color:var(--ink)}
+.btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+button.btn{font:inherit;cursor:pointer}button.btn:hover{background:#f1f1ee}
+.state{margin:10px 0 0;font-size:14px;color:var(--ok);font-weight:600}.state.empty{font-weight:400;font-style:italic}
+.card.done{opacity:.6}
+details{margin-top:10px}summary{cursor:pointer;color:var(--muted);font-size:13px}
+ul.tight{margin:6px 0 0 18px;padding:0}ul.tight li{margin:2px 0}
+.fact::before{content:"Fact · ";color:var(--ok);font-weight:600}.est::before{content:"Estimate · ";color:var(--soon);font-weight:600}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+th,td{text-align:left;padding:8px 12px;border-top:1px solid var(--line);font-size:14px}th{background:#faf9f6;color:var(--muted);font-weight:600;border-top:0}
+.warn{background:#fff7e6;border:1px solid #f1d9a5;border-radius:10px;padding:10px 14px;margin:10px 0}
+.muted{color:var(--muted)}.empty{color:var(--muted);font-style:italic}code{font-size:13px;background:#f1f1ee;padding:1px 5px;border-radius:4px}
+/* plain policy */
+.plain{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin:0 0 16px}
+.plain ol{margin:0;padding-left:20px}.plain li{margin:4px 0}.plain .lbl{color:var(--muted);font-size:13px;margin:0 0 6px}
+/* tree */
+.tree{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 14px}
+.node{margin:4px 0}.node>summary{font-size:15px;padding:6px 4px;list-style:none;display:flex;align-items:center;gap:10px;border-radius:6px}
+.node>summary::before{content:"▸";color:var(--muted);width:12px;display:inline-block}.node[open]>summary::before{content:"▾"}
+.node>summary.lit,.leaf.lit{background:var(--lit);box-shadow:0 0 0 2px var(--litline)}
+.node .q{color:var(--muted);font-size:13px}.node .n{margin-left:auto;background:#f1f1ee;border-radius:999px;padding:1px 10px;font-size:13px;color:var(--muted);min-width:24px;text-align:center}
+.n.hot{background:#1c1c1a;color:#fff}
+.lvl{margin-left:22px;border-left:2px solid var(--line);padding-left:12px}
+.leaf{display:flex;align-items:center;gap:10px;padding:6px 6px;border-top:1px dashed var(--line);border-radius:6px;cursor:pointer}
+.leaf .val{min-width:150px}.leaf select{font:inherit;font-size:13px;padding:3px 6px;border:1px solid var(--line);border-radius:6px}
+.leaf .std{color:var(--muted);font-size:12px}.leaf.zero{display:none}.tree.all .leaf.zero{display:flex;opacity:.55}.leaf .n{margin-left:auto}
+.fan{margin:0 0 6px 150px;font-size:13px;list-style:none;padding:0}.fan li{margin:2px 0}.fan .tag{font-size:11px;padding:1px 7px}.fan .sup{text-decoration:line-through;color:var(--muted)}
+.chip{display:inline-block;background:#f1f1ee;border-radius:999px;padding:1px 9px;font-size:12px;margin:0 4px 4px 0}
+.toggle{font:inherit;font-size:13px;border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 10px;cursor:pointer;margin:8px 0 0}
+textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospace,monospace;border:1px solid var(--line);border-radius:8px;padding:8px}
+</style></head><body><main>
+<h1>What PatchSignal would have told you</h1>
+<p class="sub">Replay of the CISA Known Exploited Vulnerabilities catalog (version 2026.09.09) over the last 90 days against <b>inventory.csv</b> (16 assets).</p>
+
+<div class="tabs"><button class="tab on" data-tab="notices">Notices</button><button class="tab" data-tab="policy">Policy</button></div>
+
+<section id="tab-notices">
+<div class="stats">
+  <div class="stat"><b>85</b><span>advisories published</span></div>
+  <div class="stat"><b>32</b><span>touched something you own</span></div>
+  <div class="stat"><b>30</b><span>notices sent</span></div>
+  <div class="stat"><b>2</b><span>suppressed, with a reason</span></div>
+  <div class="stat"><b>2</b><span>had no owner on file</span></div>
+</div>
+<div class="stats" id="state-stats">
+  <div class="stat"><b data-state-total="open">30</b><span>open, nobody has acted</span></div>
+  <div class="stat"><b data-state-total="acknowledged">0</b><span>acknowledged</span></div>
+  <div class="stat"><b data-state-total="assigned">0</b><span>assigned</span></div>
+  <div class="stat"><b data-state-total="fixed">0</b><span>fixed</span></div>
+</div>
+<p class="muted">53 advisories were never shown to anyone because nothing in your inventory matched. That silence is the product.</p>
+
+
+<div class="warn">dana@acme.example would have received 11 urgent notices in 90 days. Consider routing lower-confidence items to a weekly digest.</div><div class="warn">priya@acme.example would have received 13 urgent notices in 90 days. Consider routing lower-confidence items to a weekly digest.</div>
+
+<h2>Notices, most urgent first</h2>
+
+
+<div class="card now" data-id="0" data-leaf="active|open|yes|high">
+  <span class="tag now" data-badge>Act now</span><span class="muted">to Dana Ruiz and SOC · status to Marco · CISO hears only if unresolved after 24 hours</span>
+  <h3>Action needed: update Branch VPN appliance</h3>
+  <p class="because"><span data-because>Act now, because it&#39;s reachable from the internet, the attack can run by itself, and it would hurt a lot.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>SonicWall SMA1000 Appliances <span class="muted">(you run SMA 1000 12.4.3)</span></dd>
+    <dt>Where</dt><dd>Branch VPN appliance · production · reachable from the internet</dd>
+    <dt>Why it matters</dt><dd>SonicWall SMA1000 Appliances contain a server-side request forgery vulnerability that could allow a remote unauthenticated attacker to potentially cause the appliance to make requests to unintended location.</dd>
+    <dt>When</dt><dd data-when>Start mitigation today. <span class="muted">Acknowledge within 2 hours, plan within 8 hours.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-15409|Branch VPN appliance">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-15409" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-15409)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-15409 is exploited in the wild (added 2026-07-14).</li><li class="fact">CISA reports use in ransomware campaigns.</li><li class="fact">Federal remediation due date: 2026-07-17.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 12.4.3 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-15409 as exploited in the wild.</li><li class="fact">System Exposure = open: the inventory marks this asset internet-facing.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = high: criticality &#39;high&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 70 → immediate. SSVC vector <code>SSVCv2/A:Y/E:A/H:H/Se:O/</code>. Escalates to ciso@acme.example after 24 hours.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card now" data-id="1" data-leaf="active|open|yes|high">
+  <span class="tag now" data-badge>Act now</span><span class="muted">to Dana Ruiz and SOC · status to Marco · CISO hears only if unresolved after 24 hours</span>
+  <h3>Action needed: update Branch VPN appliance</h3>
+  <p class="because"><span data-because>Act now, because it&#39;s reachable from the internet, the attack can run by itself, and it would hurt a lot.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  <div class="ask"><span>Question for a person: CISA&#39;s text mentions “authenticated attacker”. Does this attack need a person&#39;s help?</span><button data-flip>Yes, it needs a person</button></div>
+  <dl>
+    <dt>What is affected</dt><dd>SonicWall SMA1000 Appliances <span class="muted">(you run SMA 1000 12.4.3)</span></dd>
+    <dt>Where</dt><dd>Branch VPN appliance · production · reachable from the internet</dd>
+    <dt>Why it matters</dt><dd>SonicWall SMA1000 Appliances contain a code injection vulnerability which in specific conditions could potentially enable a remote authenticated attacker as administrator to execute arbitrary OS commands.</dd>
+    <dt>When</dt><dd data-when>Start mitigation today. <span class="muted">Acknowledge within 2 hours, plan within 8 hours.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-15410|Branch VPN appliance">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-15410" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-15410)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-15410 is exploited in the wild (added 2026-07-14).</li><li class="fact">CISA reports use in ransomware campaigns.</li><li class="fact">Federal remediation due date: 2026-07-17.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 12.4.3 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-15410 as exploited in the wild.</li><li class="fact">System Exposure = open: the inventory marks this asset internet-facing.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = high: criticality &#39;high&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 70 → immediate. SSVC vector <code>SSVCv2/A:Y/E:A/H:H/Se:O/</code>. Escalates to ciso@acme.example after 24 hours.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card now" data-id="2" data-leaf="active|open|yes|high">
+  <span class="tag now" data-badge>Act now</span><span class="muted">to Dana Ruiz and SOC · status to Marco · CISO hears only if unresolved after 24 hours</span>
+  <h3>Action needed: update HQ VPN gateway</h3>
+  <p class="because"><span data-because>Act now, because it&#39;s reachable from the internet, the attack can run by itself, and it would hurt a lot.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>Fortinet FortiOS <span class="muted">(you run FortiOS 7.2.8)</span></dd>
+    <dt>Where</dt><dd>HQ VPN gateway · production · reachable from the internet</dd>
+    <dt>Why it matters</dt><dd>Fortinet FortiOS contains an exposure of sensitive information to an unauthorized actor vulnerability.</dd>
+    <dt>When</dt><dd data-when>Start mitigation today. <span class="muted">Acknowledge within 2 hours, plan within 8 hours.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2025-68686|HQ VPN gateway">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2025-68686" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2025-68686)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2025-68686 is exploited in the wild (added 2026-07-27).</li><li class="fact">Federal remediation due date: 2026-08-10.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 7.2.8 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2025-68686 as exploited in the wild.</li><li class="fact">System Exposure = open: the inventory marks this asset internet-facing.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = high: criticality &#39;high&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 70 → immediate. SSVC vector <code>SSVCv2/A:Y/E:A/H:H/Se:O/</code>. Escalates to ciso@acme.example after 24 hours.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card now" data-id="3" data-leaf="active|open|yes|high">
+  <span class="tag now" data-badge>Act now</span><span class="muted">to Priya Shah and SOC · status to LENA · CIO hears only if unresolved after 24 hours</span>
+  <h3>Action needed: update RMM platform</h3>
+  <p class="because"><span data-because>Act now, because it&#39;s reachable from the internet, the attack can run by itself, and it would hurt a lot.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>N-able N-central <span class="muted">(you run N-central 2024.1)</span></dd>
+    <dt>Where</dt><dd>RMM platform · production · reachable from the internet</dd>
+    <dt>Why it matters</dt><dd>N-able N-central contains an authentication bypass using an alternate path or channel allows for authentication bypass and account takeover in N-central.</dd>
+    <dt>When</dt><dd data-when>Start mitigation today. <span class="muted">Acknowledge within 2 hours, plan within 8 hours.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-18577|RMM platform">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-18577" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-18577)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-18577 is exploited in the wild (added 2026-08-03).</li><li class="fact">Federal remediation due date: 2026-08-06.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 2024.1 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-18577 as exploited in the wild.</li><li class="fact">System Exposure = open: the inventory marks this asset internet-facing.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = high: criticality &#39;high&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 70 → immediate. SSVC vector <code>SSVCv2/A:Y/E:A/H:H/Se:O/</code>. Escalates to cio@acme.example after 24 hours.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card now" data-id="4" data-leaf="active|open|yes|high">
+  <span class="tag now" data-badge>Act now</span><span class="muted">to Priya Shah and SOC · status to LENA · CIO hears only if unresolved after 24 hours</span>
+  <h3>Action needed: update RMM platform</h3>
+  <p class="because"><span data-because>Act now, because it&#39;s reachable from the internet, the attack can run by itself, and it would hurt a lot.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>N-able N-central <span class="muted">(you run N-central 2024.1)</span></dd>
+    <dt>Where</dt><dd>RMM platform · production · reachable from the internet</dd>
+    <dt>Why it matters</dt><dd>N-able N-central contains an authentication bypass using an alternate path or channel that allows for authentication bypass.</dd>
+    <dt>When</dt><dd data-when>Start mitigation today. <span class="muted">Acknowledge within 2 hours, plan within 8 hours.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-18556|RMM platform">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-18556" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-18556)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-18556 is exploited in the wild (added 2026-08-04).</li><li class="fact">Federal remediation due date: 2026-08-07.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 2024.1 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-18556 as exploited in the wild.</li><li class="fact">System Exposure = open: the inventory marks this asset internet-facing.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = high: criticality &#39;high&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 70 → immediate. SSVC vector <code>SSVCv2/A:Y/E:A/H:H/Se:O/</code>. Escalates to cio@acme.example after 24 hours.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card now" data-id="5" data-leaf="active|open|yes|high">
+  <span class="tag now" data-badge>Act now</span><span class="muted">to Priya Shah and SOC · status to LENA · CIO hears only if unresolved after 24 hours</span>
+  <h3>Action needed: update Mail server</h3>
+  <p class="because"><span data-because>Act now, because it&#39;s reachable from the internet, the attack can run by itself, and it would hurt a lot.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>Synacor Zimbra Collaboration Suite (ZCS) <span class="muted">(you run Zimbra Collaboration Suite 10.0)</span></dd>
+    <dt>Where</dt><dd>Mail server · production · reachable from the internet</dd>
+    <dt>Why it matters</dt><dd>Zimbra Collaboration Suite (ZCS) contains an OS command injection vulnerability which could allow an unauthenticated attacker to send specially crafted SMTP requests that may result in execution of arbitrary operating sy…</dd>
+    <dt>When</dt><dd data-when>Start mitigation today. <span class="muted">Acknowledge within 2 hours, plan within 8 hours.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-73570|Mail server">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-73570" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-73570)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-73570 is exploited in the wild (added 2026-08-21).</li><li class="fact">Federal remediation due date: 2026-08-24.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 10.0 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-73570 as exploited in the wild.</li><li class="fact">System Exposure = open: the inventory marks this asset internet-facing.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = high: criticality &#39;high&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 70 → immediate. SSVC vector <code>SSVCv2/A:Y/E:A/H:H/Se:O/</code>. Escalates to cio@acme.example after 24 hours.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card now" data-id="6" data-leaf="active|open|yes|high">
+  <span class="tag now" data-badge>Act now</span><span class="muted">to Dana Ruiz and SOC · status to Marco · CISO hears only if unresolved after 24 hours</span>
+  <h3>Action needed: update Remote desktop gateway</h3>
+  <p class="because"><span data-because>Act now, because it&#39;s reachable from the internet, the attack can run by itself, and it would hurt a lot.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>Citrix NetScaler ADC and NetScaler Gateway <span class="muted">(you run NetScaler Gateway 14.1)</span></dd>
+    <dt>Where</dt><dd>Remote desktop gateway · production · reachable from the internet</dd>
+    <dt>Why it matters</dt><dd>Citrix NetScaler ADC and NetScaler Gateway contain an improper restriction of operations within the bounds of a memory buffer vulnerability which could lead to denial of service.</dd>
+    <dt>When</dt><dd data-when>Start mitigation today. <span class="muted">Acknowledge within 2 hours, plan within 8 hours.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-8452|Remote desktop gateway">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-8452" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-8452)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-8452 is exploited in the wild (added 2026-08-26).</li><li class="fact">Federal remediation due date: 2026-08-29.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 14.1 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-8452 as exploited in the wild.</li><li class="fact">System Exposure = open: the inventory marks this asset internet-facing.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = high: criticality &#39;high&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 70 → immediate. SSVC vector <code>SSVCv2/A:Y/E:A/H:H/Se:O/</code>. Escalates to ciso@acme.example after 24 hours.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card now" data-id="7" data-leaf="active|open|yes|high">
+  <span class="tag now" data-badge>Act now</span><span class="muted">to Dana Ruiz and SOC · status to Marco · CISO hears only if unresolved after 24 hours</span>
+  <h3>Action needed: update Branch VPN appliance</h3>
+  <p class="because"><span data-because>Act now, because it&#39;s reachable from the internet, the attack can run by itself, and it would hurt a lot.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>SonicWall SMA1000 Appliances <span class="muted">(you run SMA 1000 12.4.3)</span></dd>
+    <dt>Where</dt><dd>Branch VPN appliance · production · reachable from the internet</dd>
+    <dt>Why it matters</dt><dd>SonicWall SMA1000 Appliances contains a server-side request forgery vulnerability that could allow a remote unauthenticated attacker to gain unauthorized access to sensitive functionality and perform unauthorized operati…</dd>
+    <dt>When</dt><dd data-when>Start mitigation today. <span class="muted">Acknowledge within 2 hours, plan within 8 hours.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-83548|Branch VPN appliance">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-83548" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-83548)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-83548 is exploited in the wild (added 2026-09-02).</li><li class="fact">Federal remediation due date: 2026-09-05.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 12.4.3 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-83548 as exploited in the wild.</li><li class="fact">System Exposure = open: the inventory marks this asset internet-facing.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = high: criticality &#39;high&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 70 → immediate. SSVC vector <code>SSVCv2/A:Y/E:A/H:H/Se:O/</code>. Escalates to ciso@acme.example after 24 hours.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card now" data-id="8" data-leaf="active|open|yes|high">
+  <span class="tag now" data-badge>Act now</span><span class="muted">to Dana Ruiz and SOC · status to Marco · CISO hears only if unresolved after 24 hours</span>
+  <h3>Action needed: update Branch VPN appliance</h3>
+  <p class="because"><span data-because>Act now, because it&#39;s reachable from the internet, the attack can run by itself, and it would hurt a lot.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  <div class="ask"><span>Question for a person: CISA&#39;s text mentions “authenticated attacker”. Does this attack need a person&#39;s help?</span><button data-flip>Yes, it needs a person</button></div>
+  <dl>
+    <dt>What is affected</dt><dd>SonicWall SMA1000 Appliances <span class="muted">(you run SMA 1000 12.4.3)</span></dd>
+    <dt>Where</dt><dd>Branch VPN appliance · production · reachable from the internet</dd>
+    <dt>Why it matters</dt><dd>SonicWall SMA1000 Appliances contains an OS command injection vulnerability that could enable a remote authenticated attacker as administrator to execute arbitrary OS commands, resulting in remote code execution.</dd>
+    <dt>When</dt><dd data-when>Start mitigation today. <span class="muted">Acknowledge within 2 hours, plan within 8 hours.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-83549|Branch VPN appliance">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-83549" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-83549)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-83549 is exploited in the wild (added 2026-09-02).</li><li class="fact">Federal remediation due date: 2026-09-05.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 12.4.3 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-83549 as exploited in the wild.</li><li class="fact">System Exposure = open: the inventory marks this asset internet-facing.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = high: criticality &#39;high&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 70 → immediate. SSVC vector <code>SSVCv2/A:Y/E:A/H:H/Se:O/</code>. Escalates to ciso@acme.example after 24 hours.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card now" data-id="9" data-leaf="active|open|yes|high">
+  <span class="tag now" data-badge>Act now</span><span class="muted">to Sam Lee and SOC · status to LENA · CIO hears only if unresolved after 24 hours</span>
+  <h3>Action needed: update Web store</h3>
+  <p class="because"><span data-because>Act now, because it&#39;s reachable from the internet, the attack can run by itself, and it would hurt a lot.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>Adobe Commerce and Magento <span class="muted">(you run Magento 2.4.6)</span></dd>
+    <dt>Where</dt><dd>Web store · production · reachable from the internet</dd>
+    <dt>Why it matters</dt><dd>Adobe Commerce and Magento Open Source contain an improper neutralization of special elements used in a template engine vulnerability that could allow an attacker to execute arbitrary code.</dd>
+    <dt>When</dt><dd data-when>Start mitigation today. <span class="muted">Acknowledge within 2 hours, plan within 8 hours.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-75650|Web store">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-75650" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-75650)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-75650 is exploited in the wild (added 2026-09-08).</li><li class="fact">Federal remediation due date: 2026-09-11.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 2.4.6 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-75650 as exploited in the wild.</li><li class="fact">System Exposure = open: the inventory marks this asset internet-facing.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = high: criticality &#39;high&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 70 → immediate. SSVC vector <code>SSVCv2/A:Y/E:A/H:H/Se:O/</code>. Escalates to cio@acme.example after 24 hours.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card now" data-id="10" data-leaf="active|open|yes|high">
+  <span class="tag now" data-badge>Act now</span><span class="muted">to Priya Shah and SOC · status to LENA · CIO hears only if unresolved after 24 hours</span>
+  <h3>Action needed: update RMM platform</h3>
+  <p class="because"><span data-because>Act now, because it&#39;s reachable from the internet, the attack can run by itself, and it would hurt a lot.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>N-able N-central <span class="muted">(you run N-central 2024.1)</span></dd>
+    <dt>Where</dt><dd>RMM platform · production · reachable from the internet</dd>
+    <dt>Why it matters</dt><dd>N-able N-central contains a static code injection vulnerability that could allow for pre-authentication remote code execution.</dd>
+    <dt>When</dt><dd data-when>Start mitigation today. <span class="muted">Acknowledge within 2 hours, plan within 8 hours.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-86218|RMM platform">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-86218" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-86218)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-86218 is exploited in the wild (added 2026-09-08).</li><li class="fact">Federal remediation due date: 2026-09-11.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 2024.1 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-86218 as exploited in the wild.</li><li class="fact">System Exposure = open: the inventory marks this asset internet-facing.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = high: criticality &#39;high&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 70 → immediate. SSVC vector <code>SSVCv2/A:Y/E:A/H:H/Se:O/</code>. Escalates to cio@acme.example after 24 hours.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card now" data-id="11" data-leaf="active|open|yes|high">
+  <span class="tag now" data-badge>Act now</span><span class="muted">to Dana Ruiz and SOC · status to Marco · CISO hears only if unresolved after 24 hours</span>
+  <h3>Action needed: update Remote desktop gateway</h3>
+  <p class="because"><span data-because>Act now, because it&#39;s reachable from the internet, the attack can run by itself, and it would hurt a lot.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>Citrix NetScaler <span class="muted">(you run NetScaler Gateway 14.1)</span></dd>
+    <dt>Where</dt><dd>Remote desktop gateway · production · reachable from the internet</dd>
+    <dt>Why it matters</dt><dd>Citrix NetScaler ADC and NetScaler Gateway contain an authentication-bypass vulnerability involving an alternate path or channel.</dd>
+    <dt>When</dt><dd data-when>Start mitigation today. <span class="muted">Acknowledge within 2 hours, plan within 8 hours.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-19490|Remote desktop gateway">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-19490" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-19490)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-19490 is exploited in the wild (added 2026-09-09).</li><li class="fact">Federal remediation due date: 2026-09-12.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 14.1 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-19490 as exploited in the wild.</li><li class="fact">System Exposure = open: the inventory marks this asset internet-facing.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = high: criticality &#39;high&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 70 → immediate. SSVC vector <code>SSVCv2/A:Y/E:A/H:H/Se:O/</code>. Escalates to ciso@acme.example after 24 hours.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card now" data-id="12" data-leaf="active|open|yes|high">
+  <span class="tag now" data-badge>Act now</span><span class="muted">to Dana Ruiz and SOC · status to Marco · CISO hears only if unresolved after 24 hours</span>
+  <h3>Action needed: update HQ VPN gateway</h3>
+  <p class="because"><span data-because>Act now, because it&#39;s reachable from the internet, the attack can run by itself, and it would hurt a lot.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>Fortinet Multiple Products <span class="muted">(you run FortiOS 7.2.8)</span></dd>
+    <dt>Where</dt><dd>HQ VPN gateway · production · reachable from the internet</dd>
+    <dt>Why it matters</dt><dd>Fortinet FortiOS, FortiSwitchManager, and FortiSASE contain a heap-based buffer overflow vulnerability that allows an attacker to execute unauthorized code or commands via specially crafted packets.</dd>
+    <dt>When</dt><dd data-when>Start mitigation today. <span class="muted">Acknowledge within 2 hours, plan within 8 hours.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2025-25249|HQ VPN gateway">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2025-25249" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2025-25249)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2025-25249 is exploited in the wild (added 2026-09-09).</li><li class="fact">Federal remediation due date: 2026-09-12.</li>
+      <li class="est">Product match is likely: Fortinet advisory names FortiOS in its description.</li><li class="est">Version 7.2.8 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2025-25249 as exploited in the wild.</li><li class="fact">System Exposure = open: the inventory marks this asset internet-facing.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = high: criticality &#39;high&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 70 → immediate. SSVC vector <code>SSVCv2/A:Y/E:A/H:H/Se:O/</code>. Escalates to ciso@acme.example after 24 hours.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card soon" data-id="13" data-leaf="active|controlled|yes|medium">
+  <span class="tag soon" data-badge>Update soon</span><span class="muted">to Dana Ruiz · status to Marco · CISO hears only if unresolved after 7 days</span>
+  <h3>Action needed: update Wi-Fi controller</h3>
+  <p class="because"><span data-because>Update soon, because it&#39;s reachable only from inside, the attack can run by itself, and it would hurt some.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>Ubiquiti UniFi OS <span class="muted">(you run UniFi OS 4.1)</span></dd>
+    <dt>Where</dt><dd>Wi-Fi controller · production</dd>
+    <dt>Why it matters</dt><dd>Ubiquiti UniFi OS contains an improper input validation vulnerability which could allow a malicious actor with access to the network to conduct command injection.</dd>
+    <dt>When</dt><dd data-when>Sooner than your normal cycle, at the next available opportunity, and no later than the CISA due date. <span class="muted">Acknowledge within 2 days, plan within 7 days.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-34910|Wi-Fi controller">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-34910" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-34910)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-34910 is exploited in the wild (added 2026-06-23).</li><li class="fact">Federal remediation due date: 2026-06-26.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 4.1 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-34910 as exploited in the wild.</li><li class="est">System Exposure = controlled: not internet-facing; assumed reachable from the internal network.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = medium: criticality &#39;medium&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 61 → out-of-cycle. SSVC vector <code>SSVCv2/A:Y/E:A/H:M/Se:C/</code>. Escalates to ciso@acme.example after 7 days.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card soon" data-id="14" data-leaf="active|controlled|yes|medium">
+  <span class="tag soon" data-badge>Update soon</span><span class="muted">to Dana Ruiz · status to Marco · CISO hears only if unresolved after 7 days</span>
+  <h3>Action needed: update Wi-Fi controller</h3>
+  <p class="because"><span data-because>Update soon, because it&#39;s reachable only from inside, the attack can run by itself, and it would hurt some.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>Ubiquiti UniFi OS <span class="muted">(you run UniFi OS 4.1)</span></dd>
+    <dt>Where</dt><dd>Wi-Fi controller · production</dd>
+    <dt>Why it matters</dt><dd>Ubiquiti UniFi OS contains a path traversal vulnerability which could allow a malicious actor with access to the network to access files on the underlying system that could be manipulated to access an underlying account.</dd>
+    <dt>When</dt><dd data-when>Sooner than your normal cycle, at the next available opportunity, and no later than the CISA due date. <span class="muted">Acknowledge within 2 days, plan within 7 days.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-34909|Wi-Fi controller">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-34909" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-34909)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-34909 is exploited in the wild (added 2026-06-23).</li><li class="fact">Federal remediation due date: 2026-06-26.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 4.1 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-34909 as exploited in the wild.</li><li class="est">System Exposure = controlled: not internet-facing; assumed reachable from the internal network.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = medium: criticality &#39;medium&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 61 → out-of-cycle. SSVC vector <code>SSVCv2/A:Y/E:A/H:M/Se:C/</code>. Escalates to ciso@acme.example after 7 days.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card soon" data-id="15" data-leaf="active|controlled|yes|medium">
+  <span class="tag soon" data-badge>Update soon</span><span class="muted">to Dana Ruiz · status to Marco · CISO hears only if unresolved after 7 days</span>
+  <h3>Action needed: update Wi-Fi controller</h3>
+  <p class="because"><span data-because>Update soon, because it&#39;s reachable only from inside, the attack can run by itself, and it would hurt some.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>Ubiquiti UniFi OS <span class="muted">(you run UniFi OS 4.1)</span></dd>
+    <dt>Where</dt><dd>Wi-Fi controller · production</dd>
+    <dt>Why it matters</dt><dd>Ubiquiti UniFi OS contains an improper access control vulnerability which could allow a malicious actor with access to the network to make unauthorized changes to the system.</dd>
+    <dt>When</dt><dd data-when>Sooner than your normal cycle, at the next available opportunity, and no later than the CISA due date. <span class="muted">Acknowledge within 2 days, plan within 7 days.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-34908|Wi-Fi controller">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-34908" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-34908)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-34908 is exploited in the wild (added 2026-06-23).</li><li class="fact">Federal remediation due date: 2026-06-26.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 4.1 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-34908 as exploited in the wild.</li><li class="est">System Exposure = controlled: not internet-facing; assumed reachable from the internal network.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = medium: criticality &#39;medium&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 61 → out-of-cycle. SSVC vector <code>SSVCv2/A:Y/E:A/H:M/Se:C/</code>. Escalates to ciso@acme.example after 7 days.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card soon" data-id="16" data-leaf="active|controlled|yes|medium">
+  <span class="tag soon" data-badge>Update soon</span><span class="muted">to Priya Shah · status to LENA · CIO hears only if unresolved after 7 days</span>
+  <h3>Action needed: update Intranet portal</h3>
+  <p class="because"><span data-because>Update soon, because it&#39;s reachable only from inside, the attack can run by itself, and it would hurt some.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>Microsoft SharePoint Server <span class="muted">(you run SharePoint Server 2019)</span></dd>
+    <dt>Where</dt><dd>Intranet portal · production</dd>
+    <dt>Why it matters</dt><dd>Microsoft SharePoint Server contains a deserialization of untrusted data vulnerability which allows an authorized attacker to execute code over a network.</dd>
+    <dt>When</dt><dd data-when>Sooner than your normal cycle, at the next available opportunity, and no later than the CISA due date. <span class="muted">Acknowledge within 2 days, plan within 7 days.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-45659|Intranet portal">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-45659" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-45659)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-45659 is exploited in the wild (added 2026-07-01).</li><li class="fact">CISA reports use in ransomware campaigns.</li><li class="fact">Federal remediation due date: 2026-07-04.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 2019 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-45659 as exploited in the wild.</li><li class="est">System Exposure = controlled: not internet-facing; assumed reachable from the internal network.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = medium: criticality &#39;medium&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 61 → out-of-cycle. SSVC vector <code>SSVCv2/A:Y/E:A/H:M/Se:C/</code>. Escalates to cio@acme.example after 7 days.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card soon" data-id="17" data-leaf="active|controlled|yes|medium">
+  <span class="tag soon" data-badge>Update soon</span><span class="muted">to Priya Shah · status to LENA · CIO hears only if unresolved after 7 days</span>
+  <h3>Action needed: update Intranet portal</h3>
+  <p class="because"><span data-because>Update soon, because it&#39;s reachable only from inside, the attack can run by itself, and it would hurt some.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>Microsoft SharePoint Server <span class="muted">(you run SharePoint Server 2019)</span></dd>
+    <dt>Where</dt><dd>Intranet portal · production</dd>
+    <dt>Why it matters</dt><dd>Microsoft SharePoint contains a missing authentication for critical function vulnerability that allows an unauthorized attacker to elevate privileges over a network.</dd>
+    <dt>When</dt><dd data-when>Sooner than your normal cycle, at the next available opportunity, and no later than the CISA due date. <span class="muted">Acknowledge within 2 days, plan within 7 days.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-56164|Intranet portal">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-56164" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-56164)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-56164 is exploited in the wild (added 2026-07-14).</li><li class="fact">Federal remediation due date: 2026-07-17.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 2019 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-56164 as exploited in the wild.</li><li class="est">System Exposure = controlled: not internet-facing; assumed reachable from the internal network.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = medium: criticality &#39;medium&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 61 → out-of-cycle. SSVC vector <code>SSVCv2/A:Y/E:A/H:M/Se:C/</code>. Escalates to cio@acme.example after 7 days.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card soon" data-id="18" data-leaf="active|controlled|yes|medium">
+  <span class="tag soon" data-badge>Update soon</span><span class="muted">to Priya Shah · status to LENA · CIO hears only if unresolved after 7 days</span>
+  <h3>Action needed: update Intranet portal</h3>
+  <p class="because"><span data-because>Update soon, because it&#39;s reachable only from inside, the attack can run by itself, and it would hurt some.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>Microsoft SharePoint <span class="muted">(you run SharePoint Server 2019)</span></dd>
+    <dt>Where</dt><dd>Intranet portal · production</dd>
+    <dt>Why it matters</dt><dd>Microsoft SharePoint contains a deserialization of untrusted data vulnerability that allows an unauthorized attacker to execute code over a network.</dd>
+    <dt>When</dt><dd data-when>Sooner than your normal cycle, at the next available opportunity, and no later than the CISA due date. <span class="muted">Acknowledge within 2 days, plan within 7 days.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-58644|Intranet portal">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-58644" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-58644)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-58644 is exploited in the wild (added 2026-07-16).</li><li class="fact">Federal remediation due date: 2026-07-19.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 2019 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-58644 as exploited in the wild.</li><li class="est">System Exposure = controlled: not internet-facing; assumed reachable from the internal network.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = medium: criticality &#39;medium&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 61 → out-of-cycle. SSVC vector <code>SSVCv2/A:Y/E:A/H:M/Se:C/</code>. Escalates to cio@acme.example after 7 days.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card soon" data-id="19" data-leaf="active|controlled|yes|medium">
+  <span class="tag soon" data-badge>Update soon</span><span class="muted">to Priya Shah · status to LENA · CIO hears only if unresolved after 7 days</span>
+  <h3>Action needed: update Intranet portal</h3>
+  <p class="because"><span data-because>Update soon, because it&#39;s reachable only from inside, the attack can run by itself, and it would hurt some.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>Microsoft SharePoint <span class="muted">(you run SharePoint Server 2019)</span></dd>
+    <dt>Where</dt><dd>Intranet portal · production</dd>
+    <dt>Why it matters</dt><dd>Microsoft SharePoint contains a deserialization of untrusted data vulnerability which could allow an unauthorized attacker to execute code over a network.</dd>
+    <dt>When</dt><dd data-when>Sooner than your normal cycle, at the next available opportunity, and no later than the CISA due date. <span class="muted">Acknowledge within 2 days, plan within 7 days.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-50522|Intranet portal">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-50522" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-50522)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-50522 is exploited in the wild (added 2026-07-22).</li><li class="fact">Federal remediation due date: 2026-07-25.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 2019 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-50522 as exploited in the wild.</li><li class="est">System Exposure = controlled: not internet-facing; assumed reachable from the internal network.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = medium: criticality &#39;medium&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 61 → out-of-cycle. SSVC vector <code>SSVCv2/A:Y/E:A/H:M/Se:C/</code>. Escalates to cio@acme.example after 7 days.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card soon" data-id="21" data-leaf="active|controlled|yes|low">
+  <span class="tag soon" data-badge>Update soon</span><span class="muted">to Sam Lee · status to LENA · CIO hears only if unresolved after 7 days</span>
+  <h3>Action needed: update Build server</h3>
+  <p class="because"><span data-because>Update soon, because it&#39;s reachable only from inside, the attack can run by itself, and it would hurt a little.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>JetBrains TeamCity <span class="muted">(you run TeamCity 2024.03)</span></dd>
+    <dt>Where</dt><dd>Build server · staging</dd>
+    <dt>Why it matters</dt><dd>JetBrains TeamCity contains a deserialization of untrusted data vulnerability that could allow unauthenticated remote code execution via the agent polling protocol.</dd>
+    <dt>When</dt><dd data-when>Sooner than your normal cycle, at the next available opportunity, and no later than the CISA due date. <span class="muted">Acknowledge within 2 days, plan within 7 days.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-63077|Build server">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-63077" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-63077)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-63077 is exploited in the wild (added 2026-08-05).</li><li class="fact">Federal remediation due date: 2026-08-08.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 2024.03 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-63077 as exploited in the wild.</li><li class="est">System Exposure = controlled: not internet-facing; assumed reachable from the internal network.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = low: this is a staging system; mission impact is at most degraded.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 60 → out-of-cycle. SSVC vector <code>SSVCv2/A:Y/E:A/H:L/Se:C/</code>. Escalates to cio@acme.example after 7 days.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card soon" data-id="23" data-leaf="active|controlled|yes|medium">
+  <span class="tag soon" data-badge>Update soon</span><span class="muted">to Priya Shah · status to LENA · CIO hears only if unresolved after 7 days</span>
+  <h3>Action needed: update File server</h3>
+  <p class="because"><span data-because>Update soon, because it&#39;s reachable only from inside, the attack can run by itself, and it would hurt some.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  <div class="ask"><span>Question for a person: CISA&#39;s text mentions “locally”. Does this attack need a person&#39;s help?</span><button data-flip>Yes, it needs a person</button></div>
+  <dl>
+    <dt>What is affected</dt><dd>Microsoft Windows Ancillary Function Driver for WinSock <span class="muted">(you run Windows Server 2022)</span></dd>
+    <dt>Where</dt><dd>File server · production</dd>
+    <dt>Why it matters</dt><dd>Microsoft Windows Ancillary Function Driver for WinSock contains a use-after-free vulnerability that allows an authorized attacker to elevate privileges locally.</dd>
+    <dt>When</dt><dd data-when>Sooner than your normal cycle, at the next available opportunity, and no later than the CISA due date. <span class="muted">Acknowledge within 2 days, plan within 7 days.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-68820|File server">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-68820" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-68820)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-68820 is exploited in the wild (added 2026-08-11).</li><li class="fact">Federal remediation due date: 2026-08-25.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 2022 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-68820 as exploited in the wild.</li><li class="est">System Exposure = controlled: not internet-facing; assumed reachable from the internal network.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = medium: criticality &#39;medium&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 61 → out-of-cycle. SSVC vector <code>SSVCv2/A:Y/E:A/H:M/Se:C/</code>. Escalates to cio@acme.example after 7 days.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card soon" data-id="24" data-leaf="active|controlled|yes|high">
+  <span class="tag soon" data-badge>Update soon</span><span class="muted">to Priya Shah · status to LENA · CIO hears only if unresolved after 7 days</span>
+  <h3>Action needed: update Virtualization manager</h3>
+  <p class="because"><span data-because>Update soon, because it&#39;s reachable only from inside, the attack can run by itself, and it would hurt a lot.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>Broadcom VMware vCenter <span class="muted">(you run vCenter Server 8.0u2)</span></dd>
+    <dt>Where</dt><dd>Virtualization manager · production</dd>
+    <dt>Why it matters</dt><dd>Broadcom VMware vCenter contains a path traversal vulnerability which could allow a threat actor with network access to vCenter to execute arbitrary code.</dd>
+    <dt>When</dt><dd data-when>Sooner than your normal cycle, at the next available opportunity, and no later than the CISA due date. <span class="muted">Acknowledge within 2 days, plan within 7 days.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-59310|Virtualization manager">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-59310" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-59310)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-59310 is exploited in the wild (added 2026-08-18).</li><li class="fact">Federal remediation due date: 2026-08-21.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 8.0u2 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-59310 as exploited in the wild.</li><li class="est">System Exposure = controlled: not internet-facing; assumed reachable from the internal network.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = high: criticality &#39;high&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 62 → out-of-cycle. SSVC vector <code>SSVCv2/A:Y/E:A/H:H/Se:C/</code>. Escalates to cio@acme.example after 7 days.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card soon" data-id="25" data-leaf="active|controlled|yes|medium">
+  <span class="tag soon" data-badge>Update soon</span><span class="muted">to Priya Shah · status to LENA · CIO hears only if unresolved after 7 days</span>
+  <h3>Action needed: update Intranet portal</h3>
+  <p class="because"><span data-because>Update soon, because it&#39;s reachable only from inside, the attack can run by itself, and it would hurt some.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>Microsoft SharePoint <span class="muted">(you run SharePoint Server 2019)</span></dd>
+    <dt>Where</dt><dd>Intranet portal · production</dd>
+    <dt>Why it matters</dt><dd>Microsoft SharePoint contains a weak authentication vulnerability which allows an unauthorized attacker to bypass a security feature over a network.</dd>
+    <dt>When</dt><dd data-when>Sooner than your normal cycle, at the next available opportunity, and no later than the CISA due date. <span class="muted">Acknowledge within 2 days, plan within 7 days.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-55040|Intranet portal">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-55040" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-55040)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-55040 is exploited in the wild (added 2026-08-18).</li><li class="fact">Federal remediation due date: 2026-08-21.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 2019 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-55040 as exploited in the wild.</li><li class="est">System Exposure = controlled: not internet-facing; assumed reachable from the internal network.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = medium: criticality &#39;medium&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 61 → out-of-cycle. SSVC vector <code>SSVCv2/A:Y/E:A/H:M/Se:C/</code>. Escalates to cio@acme.example after 7 days.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card soon" data-id="26" data-leaf="active|controlled|yes|low">
+  <span class="tag soon" data-badge>Update soon</span><span class="muted">to Security team (no owner on file) · status to LENA · CIO hears only if unresolved after 7 days</span>
+  <h3>Action needed: update Print server</h3>
+  <p class="because"><span data-because>Update soon, because it&#39;s reachable only from inside, the attack can run by itself, and it would hurt a little.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>PaperCut NG/MF <span class="muted">(you run PaperCut MF 22.1)</span></dd>
+    <dt>Where</dt><dd>Print server · production</dd>
+    <dt>Why it matters</dt><dd>PaperCut NG/MF contains an unsafe reflection vulnerability that allows an attacker to manipulate system configuration parameters and execute arbitrary Java bytecode residing on the application classpath under the securit…</dd>
+    <dt>When</dt><dd data-when>Sooner than your normal cycle, at the next available opportunity, and no later than the CISA due date. <span class="muted">Acknowledge within 2 days, plan within 7 days.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-82078|Print server">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-82078" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-82078)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-82078 is exploited in the wild (added 2026-08-31).</li><li class="fact">Federal remediation due date: 2026-09-14.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 22.1 was not checked; the CISA feed does not list affected versions.</li><li class="est">No owner recorded for this asset; routed to the fallback contact.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-82078 as exploited in the wild.</li><li class="est">System Exposure = controlled: not internet-facing; assumed reachable from the internal network.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = low: criticality &#39;low&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 60 → out-of-cycle. SSVC vector <code>SSVCv2/A:Y/E:A/H:L/Se:C/</code>. Escalates to cio@acme.example after 7 days.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card soon" data-id="27" data-leaf="active|controlled|yes|low">
+  <span class="tag soon" data-badge>Update soon</span><span class="muted">to Security team (no owner on file) · status to LENA · CIO hears only if unresolved after 7 days</span>
+  <h3>Action needed: update Print server</h3>
+  <p class="because"><span data-because>Update soon, because it&#39;s reachable only from inside, the attack can run by itself, and it would hurt a little.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>PaperCut NG/MF <span class="muted">(you run PaperCut MF 22.1)</span></dd>
+    <dt>Where</dt><dd>Print server · production</dd>
+    <dt>Why it matters</dt><dd>PaperCut NG/MF contains a missing authentication for critical function vulnerability which allows an unauthenticated remote attacker to modify certain system configurations.</dd>
+    <dt>When</dt><dd data-when>Sooner than your normal cycle, at the next available opportunity, and no later than the CISA due date. <span class="muted">Acknowledge within 2 days, plan within 7 days.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-81578|Print server">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-81578" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-81578)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-81578 is exploited in the wild (added 2026-08-31).</li><li class="fact">Federal remediation due date: 2026-09-14.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 22.1 was not checked; the CISA feed does not list affected versions.</li><li class="est">No owner recorded for this asset; routed to the fallback contact.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-81578 as exploited in the wild.</li><li class="est">System Exposure = controlled: not internet-facing; assumed reachable from the internal network.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = low: criticality &#39;low&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 60 → out-of-cycle. SSVC vector <code>SSVCv2/A:Y/E:A/H:L/Se:C/</code>. Escalates to cio@acme.example after 7 days.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card soon" data-id="28" data-leaf="active|controlled|yes|medium">
+  <span class="tag soon" data-badge>Update soon</span><span class="muted">to Priya Shah · status to LENA · CIO hears only if unresolved after 7 days</span>
+  <h3>Action needed: update File server</h3>
+  <p class="because"><span data-because>Update soon, because it&#39;s reachable only from inside, the attack can run by itself, and it would hurt some.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  <div class="ask"><span>Question for a person: CISA&#39;s text mentions “local attacker”. Does this attack need a person&#39;s help?</span><button data-flip>Yes, it needs a person</button></div>
+  <dl>
+    <dt>What is affected</dt><dd>Microsoft Windows <span class="muted">(you run Windows Server 2022)</span></dd>
+    <dt>Where</dt><dd>File server · production</dd>
+    <dt>Why it matters</dt><dd>Microsoft Windows Update Stack contains a link following vulnerability that allows a local attacker to escalate privileges locally up to SYSTEM.</dd>
+    <dt>When</dt><dd data-when>Sooner than your normal cycle, at the next available opportunity, and no later than the CISA due date. <span class="muted">Acknowledge within 2 days, plan within 7 days.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-81963|File server">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-81963" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-81963)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-81963 is exploited in the wild (added 2026-09-08).</li><li class="fact">Federal remediation due date: 2026-09-22.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 2022 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-81963 as exploited in the wild.</li><li class="est">System Exposure = controlled: not internet-facing; assumed reachable from the internal network.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = medium: criticality &#39;medium&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 61 → out-of-cycle. SSVC vector <code>SSVCv2/A:Y/E:A/H:M/Se:C/</code>. Escalates to cio@acme.example after 7 days.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card soon" data-id="29" data-leaf="active|controlled|yes|medium">
+  <span class="tag soon" data-badge>Update soon</span><span class="muted">to Priya Shah · status to LENA · CIO hears only if unresolved after 7 days</span>
+  <h3>Action needed: update File server</h3>
+  <p class="because"><span data-because>Update soon, because it&#39;s reachable only from inside, the attack can run by itself, and it would hurt some.</span><a href="#" data-show-path>Show me in the policy</a></p>
+  <div class="ask"><span>Question for a person: CISA&#39;s text mentions “locally”. Does this attack need a person&#39;s help?</span><button data-flip>Yes, it needs a person</button></div>
+  <dl>
+    <dt>What is affected</dt><dd>Microsoft Windows <span class="muted">(you run Windows Server 2022)</span></dd>
+    <dt>Where</dt><dd>File server · production</dd>
+    <dt>Why it matters</dt><dd>Microsoft Windows Advanced Local Procedure Call contains a heap-based buffer overflow vulnerability that allows an attacker to elevate privileges locally.</dd>
+    <dt>When</dt><dd data-when>Sooner than your normal cycle, at the next available opportunity, and no later than the CISA due date. <span class="muted">Acknowledge within 2 days, plan within 7 days.</span></dd>
+    <dt>What to do</dt><dd>Apply mitigations in accordance with vendor instructions.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-85880|File server">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-85880" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-85880)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-85880 is exploited in the wild (added 2026-09-08).</li><li class="fact">Federal remediation due date: 2026-09-22.</li>
+      <li class="est">Product match is exact: vendor and product names match (100%).</li><li class="est">Version 2022 was not checked; the CISA feed does not list affected versions.</li>
+      <li class="fact">Exploitation = active: CISA lists CVE-2026-85880 as exploited in the wild.</li><li class="est">System Exposure = controlled: not internet-facing; assumed reachable from the internal network.</li><li class="est">Automatable = yes: assumed the attack can run by itself, the worst case, until a person says otherwise.</li><li class="est">Human Impact = medium: criticality &#39;medium&#39; in the inventory.</li>
+      <li class="fact">Decided by SEI deployer tree (default), row 61 → out-of-cycle. SSVC vector <code>SSVCv2/A:Y/E:A/H:M/Se:C/</code>. Escalates to cio@acme.example after 7 days.</li>
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card watch" data-id="30" data-leaf="">
+  <span class="tag watch" data-badge>Watch</span><span class="muted">to Dana Ruiz</span>
+  <h3>Does this apply? HQ VPN gateway</h3>
+  <p class="because"><span data-because>Watch, because we are not sure this product is the one on this asset.</span></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>Fortinet FortiSandbox <span class="muted">(you run FortiOS 7.2.8)</span></dd>
+    <dt>Where</dt><dd>HQ VPN gateway · production · reachable from the internet</dd>
+    <dt>Why it matters</dt><dd>Fortinet FortiSandbox, FortiSandbox Cloud, and FortiSandbox PaaS contain an OS command injection vulnerability that allows an unauthenticated attacker to execute unauthorized commands via specifically crafted HTTP reques…</dd>
+    <dt>When</dt><dd data-when>No action yet. Tell us whether this product is really in use. <span class="muted">Acknowledge within 7 days.</span></dd>
+    <dt>What to do</dt><dd>Tell us whether this product is really in use. If it is, follow the vendor fix.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-25089|HQ VPN gateway">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-25089" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-25089)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-25089 is exploited in the wild (added 2026-07-16).</li><li class="fact">Federal remediation due date: 2026-07-19.</li>
+      <li class="est">Product match is possible: vendor matches; product name only partly matches (63%).</li><li class="est">Version 7.2.8 was not checked; the CISA feed does not list affected versions.</li>
+      
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+<div class="card watch" data-id="31" data-leaf="">
+  <span class="tag watch" data-badge>Watch</span><span class="muted">to Dana Ruiz</span>
+  <h3>Does this apply? HQ VPN gateway</h3>
+  <p class="because"><span data-because>Watch, because we are not sure this product is the one on this asset.</span></p>
+  
+  <dl>
+    <dt>What is affected</dt><dd>Fortinet FortiSandbox <span class="muted">(you run FortiOS 7.2.8)</span></dd>
+    <dt>Where</dt><dd>HQ VPN gateway · production · reachable from the internet</dd>
+    <dt>Why it matters</dt><dd>Fortinet FortiSandbox contains an OS command injection vulnerability that could allow an unauthenticated attacker to execute unauthorized code or commands via crafted HTTP requests.</dd>
+    <dt>When</dt><dd data-when>No action yet. Tell us whether this product is really in use. <span class="muted">Acknowledge within 7 days.</span></dd>
+    <dt>What to do</dt><dd>Tell us whether this product is really in use. If it is, follow the vendor fix.</dd>
+  </dl>
+  <p class="state empty" data-state>Nobody has acted on this yet.</p>
+  <div class="btns" data-key="CVE-2026-39808|HQ VPN gateway">
+    <a class="btn primary" href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=CVE-2026-39808" target="_blank" rel="noopener">Open official fix</a>
+    <button class="btn" data-action="acknowledged">Acknowledge</button>
+    <button class="btn" data-action="assigned">Assign to someone else</button>
+    <button class="btn" data-action="not_applicable">This does not apply</button>
+    <button class="btn" data-action="fixed">Fixed</button>
+    <button class="btn" data-action="reopened" hidden>Reopen</button>
+  </div>
+  <details><summary>For the auditor (CVE-2026-39808)</summary>
+    <ul class="tight">
+      <li class="fact">CISA confirms CVE-2026-39808 is exploited in the wild (added 2026-07-16).</li><li class="fact">Federal remediation due date: 2026-07-19.</li>
+      <li class="est">Product match is possible: vendor matches; product name only partly matches (63%).</li><li class="est">Version 7.2.8 was not checked; the CISA feed does not list affected versions.</li>
+      
+      <li class="fact">CISA's full required action: Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset&#39;s internet exposure and ensuring adherence to BOD 26-04 patching guidelines.</li>
+      
+    </ul>
+  </details>
+</div>
+
+
+<h2>Who would have heard from us, and how much</h2>
+
+<table><tr><th>Person</th><th>Full notices, to fix</th><th>One-line statuses</th><th>Hears only if stuck</th></tr>
+<tr><td>Dana Ruiz <span class="muted">dana@acme.example</span></td><td>13</td><td></td><td></td></tr><tr><td>SOC <span class="muted">soc@acme.example</span></td><td>13</td><td></td><td></td></tr><tr><td>Priya Shah <span class="muted">priya@acme.example</span></td><td>13</td><td></td><td></td></tr><tr><td>CIO <span class="muted">cio@acme.example</span></td><td></td><td></td><td>17</td></tr><tr><td>CISO <span class="muted">ciso@acme.example</span></td><td></td><td></td><td>11</td></tr><tr><td>LENA <span class="muted">lena@acme.example</span></td><td></td><td>8</td><td></td></tr><tr><td>Sam Lee <span class="muted">sam@acme.example</span></td><td>2</td><td></td><td></td></tr><tr><td>Security team <span class="muted">security@example.com</span></td><td>2</td><td></td><td></td></tr><tr><td>Marco <span class="muted">marco@acme.example</span></td><td></td><td>4</td><td></td></tr>
+</table>
+
+<h2>What the accountable people see</h2>
+<p class="muted">The whole message. No CVE numbers, no descriptions, no links to advisories.</p>
+
+
+<div class="card">
+  <b>Marco</b> <span class="muted">marco@acme.example</span>
+  <h3 style="margin-top:8px">3 urgent technology risks need attention</h3>
+  <ul class="tight" style="margin-left:0;list-style:none"><li><span class="tag now" style="font-size:11px">Act now</span>Branch VPN appliance: act now. Assigned to Dana Ruiz. Acknowledge within 2 hours, plan within 8 hours. Decision needed from you: none at this time.</li><li><span class="tag now" style="font-size:11px">Act now</span>HQ VPN gateway: act now. Assigned to Dana Ruiz. Acknowledge within 2 hours, plan within 8 hours. Decision needed from you: none at this time.</li><li><span class="tag now" style="font-size:11px">Act now</span>Remote desktop gateway: act now. Assigned to Dana Ruiz. Acknowledge within 2 hours, plan within 8 hours. Decision needed from you: none at this time.</li><li><span class="tag soon" style="font-size:11px">Update soon</span>Wi-Fi controller: update soon. Assigned to Dana Ruiz. Acknowledge within 2 days, plan within 7 days. Decision needed from you: none at this time.</li></ul>
+</div>
+
+<div class="card">
+  <b>LENA</b> <span class="muted">lena@acme.example</span>
+  <h3 style="margin-top:8px">3 urgent technology risks need attention</h3>
+  <ul class="tight" style="margin-left:0;list-style:none"><li><span class="tag now" style="font-size:11px">Act now</span>RMM platform: act now. Assigned to Priya Shah. Acknowledge within 2 hours, plan within 8 hours. Decision needed from you: none at this time.</li><li><span class="tag now" style="font-size:11px">Act now</span>Mail server: act now. Assigned to Priya Shah. Acknowledge within 2 hours, plan within 8 hours. Decision needed from you: none at this time.</li><li><span class="tag now" style="font-size:11px">Act now</span>Web store: act now. Assigned to Sam Lee. Acknowledge within 2 hours, plan within 8 hours. Decision needed from you: none at this time.</li><li><span class="tag soon" style="font-size:11px">Update soon</span>Intranet portal: update soon. Assigned to Priya Shah. Acknowledge within 2 days, plan within 7 days. Decision needed from you: none at this time.</li><li><span class="tag soon" style="font-size:11px">Update soon</span>Build server: update soon. Assigned to Sam Lee. Acknowledge within 2 days, plan within 7 days. Decision needed from you: none at this time.</li><li><span class="tag soon" style="font-size:11px">Update soon</span>File server: update soon. Assigned to Priya Shah. Acknowledge within 2 days, plan within 7 days. Decision needed from you: none at this time.</li><li><span class="tag soon" style="font-size:11px">Update soon</span>Virtualization manager: update soon. Assigned to Priya Shah. Acknowledge within 2 days, plan within 7 days. Decision needed from you: none at this time.</li><li><span class="tag soon" style="font-size:11px">Update soon</span>Print server: update soon. Assigned to Security team. Acknowledge within 2 days, plan within 7 days. Decision needed from you: none at this time.</li></ul>
+</div>
+
+
+<h2>Why was this not sent?</h2>
+
+<div class="card"><b>CVE-2026-34486</b> on Legacy app server was not sent because exception on file until 2026-12-31 (behind WAF; replacement scheduled Q4). Owner: Sam Lee.</div><div class="card"><b>CVE-2026-20349</b> on Old lab firewall was not sent because asset is marked &#39;retired&#39; (row 14). Owner: Dana Ruiz.</div>
+</section>
+
+<section id="tab-policy" hidden>
+<div class="plain"><p class="lbl">Your policy, in plain words. Every exploited vulnerability that touches something you own is handled like this:</p><ol id="plain-lines"><li>Reachable from the internet and the attack can run by itself: Update soon; Act now if it would hurt a lot or more.</li><li>Reachable from the internet but the attack needs a person: Update soon; Plan update if it would only hurt a little; Act now if it could stop the business.</li><li>Reachable from inside only and the attack can run by itself: Update soon.</li><li>Reachable from inside only but the attack needs a person: Plan update; Update soon if it would hurt a lot or more.</li><li>Isolated and the attack can run by itself: Update soon; Plan update if it would only hurt a little.</li><li>Isolated but the attack needs a person: Plan update; Update soon if it would hurt a lot or more.</li></ol></div>
+<div class="stats">
+  <div class="stat"><b data-total="defer">0</b><span>Defer</span></div><div class="stat"><b data-total="scheduled">0</b><span>Plan update</span></div><div class="stat"><b data-total="out-of-cycle">0</b><span>Update soon</span></div><div class="stat"><b data-total="immediate">0</b><span>Act now</span></div>
+</div>
+<p class="sub">To change the policy, change an answer below. Three questions, in order, then an answer. Everything on this page recomputes. The wording is the SEI/CERT SSVC deployer tree underneath, so an auditor can trace every decision.</p>
+<div class="tree" id="tree">
+  
+    <details class="node" open data-node="active|open"><summary><span>Can attackers reach it? <b>from the internet</b></span><span class="n hot" data-count>14</span></summary>
+    <div class="lvl">
+    
+      <details class="node"  data-node="active|open|no"><summary><span>Can the attack run by itself? <b>no, it needs a person</b></span><span class="n " data-count>0</span></summary>
+      <div class="lvl">
+      
+        <div class="leaf zero" data-leaf="active|open|no|low">
+          <span class="val">How much would it hurt? <b>a little</b></span>
+          <span class="muted">→</span>
+          <select data-select="active|open|no|low"><option value="defer" >Defer</option><option value="scheduled" selected>Plan update</option><option value="out-of-cycle" >Update soon</option><option value="immediate" >Act now</option></select>
+          <span class="std" title="SSVC row 64">scheduled</span>
+          <span class="n " data-count>0</span>
+        </div>
+        <ul class="fan" data-fan="active|open|no|low"></ul>
+      
+        <div class="leaf zero" data-leaf="active|open|no|medium">
+          <span class="val">How much would it hurt? <b>some</b></span>
+          <span class="muted">→</span>
+          <select data-select="active|open|no|medium"><option value="defer" >Defer</option><option value="scheduled" >Plan update</option><option value="out-of-cycle" selected>Update soon</option><option value="immediate" >Act now</option></select>
+          <span class="std" title="SSVC row 65">out-of-cycle</span>
+          <span class="n " data-count>0</span>
+        </div>
+        <ul class="fan" data-fan="active|open|no|medium"></ul>
+      
+        <div class="leaf zero" data-leaf="active|open|no|high">
+          <span class="val">How much would it hurt? <b>a lot</b></span>
+          <span class="muted">→</span>
+          <select data-select="active|open|no|high"><option value="defer" >Defer</option><option value="scheduled" >Plan update</option><option value="out-of-cycle" selected>Update soon</option><option value="immediate" >Act now</option></select>
+          <span class="std" title="SSVC row 66">out-of-cycle</span>
+          <span class="n " data-count>0</span>
+        </div>
+        <ul class="fan" data-fan="active|open|no|high"></ul>
+      
+        <div class="leaf zero" data-leaf="active|open|no|very high">
+          <span class="val">How much would it hurt? <b>business-stopping</b></span>
+          <span class="muted">→</span>
+          <select data-select="active|open|no|very high"><option value="defer" >Defer</option><option value="scheduled" >Plan update</option><option value="out-of-cycle" >Update soon</option><option value="immediate" selected>Act now</option></select>
+          <span class="std" title="SSVC row 67">immediate</span>
+          <span class="n " data-count>0</span>
+        </div>
+        <ul class="fan" data-fan="active|open|no|very high"></ul>
+      
+      </div></details>
+    
+      <details class="node" open data-node="active|open|yes"><summary><span>Can the attack run by itself? <b>yes</b></span><span class="n hot" data-count>14</span></summary>
+      <div class="lvl">
+      
+        <div class="leaf zero" data-leaf="active|open|yes|low">
+          <span class="val">How much would it hurt? <b>a little</b></span>
+          <span class="muted">→</span>
+          <select data-select="active|open|yes|low"><option value="defer" >Defer</option><option value="scheduled" >Plan update</option><option value="out-of-cycle" selected>Update soon</option><option value="immediate" >Act now</option></select>
+          <span class="std" title="SSVC row 68">out-of-cycle</span>
+          <span class="n " data-count>0</span>
+        </div>
+        <ul class="fan" data-fan="active|open|yes|low"></ul>
+      
+        <div class="leaf " data-leaf="active|open|yes|medium">
+          <span class="val">How much would it hurt? <b>some</b></span>
+          <span class="muted">→</span>
+          <select data-select="active|open|yes|medium"><option value="defer" >Defer</option><option value="scheduled" >Plan update</option><option value="out-of-cycle" selected>Update soon</option><option value="immediate" >Act now</option></select>
+          <span class="std" title="SSVC row 69">out-of-cycle</span>
+          <span class="n hot" data-count>1</span>
+        </div>
+        <ul class="fan" data-fan="active|open|yes|medium"></ul>
+      
+        <div class="leaf " data-leaf="active|open|yes|high">
+          <span class="val">How much would it hurt? <b>a lot</b></span>
+          <span class="muted">→</span>
+          <select data-select="active|open|yes|high"><option value="defer" >Defer</option><option value="scheduled" >Plan update</option><option value="out-of-cycle" >Update soon</option><option value="immediate" selected>Act now</option></select>
+          <span class="std" title="SSVC row 70">immediate</span>
+          <span class="n hot" data-count>13</span>
+        </div>
+        <ul class="fan" data-fan="active|open|yes|high"></ul>
+      
+        <div class="leaf zero" data-leaf="active|open|yes|very high">
+          <span class="val">How much would it hurt? <b>business-stopping</b></span>
+          <span class="muted">→</span>
+          <select data-select="active|open|yes|very high"><option value="defer" >Defer</option><option value="scheduled" >Plan update</option><option value="out-of-cycle" >Update soon</option><option value="immediate" selected>Act now</option></select>
+          <span class="std" title="SSVC row 71">immediate</span>
+          <span class="n " data-count>0</span>
+        </div>
+        <ul class="fan" data-fan="active|open|yes|very high"></ul>
+      
+      </div></details>
+    
+    </div></details>
+  
+    <details class="node" open data-node="active|controlled"><summary><span>Can attackers reach it? <b>from inside only</b></span><span class="n hot" data-count>16</span></summary>
+    <div class="lvl">
+    
+      <details class="node"  data-node="active|controlled|no"><summary><span>Can the attack run by itself? <b>no, it needs a person</b></span><span class="n " data-count>0</span></summary>
+      <div class="lvl">
+      
+        <div class="leaf zero" data-leaf="active|controlled|no|low">
+          <span class="val">How much would it hurt? <b>a little</b></span>
+          <span class="muted">→</span>
+          <select data-select="active|controlled|no|low"><option value="defer" >Defer</option><option value="scheduled" selected>Plan update</option><option value="out-of-cycle" >Update soon</option><option value="immediate" >Act now</option></select>
+          <span class="std" title="SSVC row 56">scheduled</span>
+          <span class="n " data-count>0</span>
+        </div>
+        <ul class="fan" data-fan="active|controlled|no|low"></ul>
+      
+        <div class="leaf zero" data-leaf="active|controlled|no|medium">
+          <span class="val">How much would it hurt? <b>some</b></span>
+          <span class="muted">→</span>
+          <select data-select="active|controlled|no|medium"><option value="defer" >Defer</option><option value="scheduled" selected>Plan update</option><option value="out-of-cycle" >Update soon</option><option value="immediate" >Act now</option></select>
+          <span class="std" title="SSVC row 57">scheduled</span>
+          <span class="n " data-count>0</span>
+        </div>
+        <ul class="fan" data-fan="active|controlled|no|medium"></ul>
+      
+        <div class="leaf zero" data-leaf="active|controlled|no|high">
+          <span class="val">How much would it hurt? <b>a lot</b></span>
+          <span class="muted">→</span>
+          <select data-select="active|controlled|no|high"><option value="defer" >Defer</option><option value="scheduled" >Plan update</option><option value="out-of-cycle" selected>Update soon</option><option value="immediate" >Act now</option></select>
+          <span class="std" title="SSVC row 58">out-of-cycle</span>
+          <span class="n " data-count>0</span>
+        </div>
+        <ul class="fan" data-fan="active|controlled|no|high"></ul>
+      
+        <div class="leaf zero" data-leaf="active|controlled|no|very high">
+          <span class="val">How much would it hurt? <b>business-stopping</b></span>
+          <span class="muted">→</span>
+          <select data-select="active|controlled|no|very high"><option value="defer" >Defer</option><option value="scheduled" >Plan update</option><option value="out-of-cycle" selected>Update soon</option><option value="immediate" >Act now</option></select>
+          <span class="std" title="SSVC row 59">out-of-cycle</span>
+          <span class="n " data-count>0</span>
+        </div>
+        <ul class="fan" data-fan="active|controlled|no|very high"></ul>
+      
+      </div></details>
+    
+      <details class="node" open data-node="active|controlled|yes"><summary><span>Can the attack run by itself? <b>yes</b></span><span class="n hot" data-count>16</span></summary>
+      <div class="lvl">
+      
+        <div class="leaf " data-leaf="active|controlled|yes|low">
+          <span class="val">How much would it hurt? <b>a little</b></span>
+          <span class="muted">→</span>
+          <select data-select="active|controlled|yes|low"><option value="defer" >Defer</option><option value="scheduled" >Plan update</option><option value="out-of-cycle" selected>Update soon</option><option value="immediate" >Act now</option></select>
+          <span class="std" title="SSVC row 60">out-of-cycle</span>
+          <span class="n hot" data-count>4</span>
+        </div>
+        <ul class="fan" data-fan="active|controlled|yes|low"></ul>
+      
+        <div class="leaf " data-leaf="active|controlled|yes|medium">
+          <span class="val">How much would it hurt? <b>some</b></span>
+          <span class="muted">→</span>
+          <select data-select="active|controlled|yes|medium"><option value="defer" >Defer</option><option value="scheduled" >Plan update</option><option value="out-of-cycle" selected>Update soon</option><option value="immediate" >Act now</option></select>
+          <span class="std" title="SSVC row 61">out-of-cycle</span>
+          <span class="n hot" data-count>11</span>
+        </div>
+        <ul class="fan" data-fan="active|controlled|yes|medium"></ul>
+      
+        <div class="leaf " data-leaf="active|controlled|yes|high">
+          <span class="val">How much would it hurt? <b>a lot</b></span>
+          <span class="muted">→</span>
+          <select data-select="active|controlled|yes|high"><option value="defer" >Defer</option><option value="scheduled" >Plan update</option><option value="out-of-cycle" selected>Update soon</option><option value="immediate" >Act now</option></select>
+          <span class="std" title="SSVC row 62">out-of-cycle</span>
+          <span class="n hot" data-count>1</span>
+        </div>
+        <ul class="fan" data-fan="active|controlled|yes|high"></ul>
+      
+        <div class="leaf zero" data-leaf="active|controlled|yes|very high">
+          <span class="val">How much would it hurt? <b>business-stopping</b></span>
+          <span class="muted">→</span>
+          <select data-select="active|controlled|yes|very high"><option value="defer" >Defer</option><option value="scheduled" >Plan update</option><option value="out-of-cycle" selected>Update soon</option><option value="immediate" >Act now</option></select>
+          <span class="std" title="SSVC row 63">out-of-cycle</span>
+          <span class="n " data-count>0</span>
+        </div>
+        <ul class="fan" data-fan="active|controlled|yes|very high"></ul>
+      
+      </div></details>
+    
+    </div></details>
+  
+    <details class="node"  data-node="active|small"><summary><span>Can attackers reach it? <b>isolated</b></span><span class="n " data-count>0</span></summary>
+    <div class="lvl">
+    
+      <details class="node"  data-node="active|small|no"><summary><span>Can the attack run by itself? <b>no, it needs a person</b></span><span class="n " data-count>0</span></summary>
+      <div class="lvl">
+      
+        <div class="leaf zero" data-leaf="active|small|no|low">
+          <span class="val">How much would it hurt? <b>a little</b></span>
+          <span class="muted">→</span>
+          <select data-select="active|small|no|low"><option value="defer" >Defer</option><option value="scheduled" selected>Plan update</option><option value="out-of-cycle" >Update soon</option><option value="immediate" >Act now</option></select>
+          <span class="std" title="SSVC row 48">scheduled</span>
+          <span class="n " data-count>0</span>
+        </div>
+        <ul class="fan" data-fan="active|small|no|low"></ul>
+      
+        <div class="leaf zero" data-leaf="active|small|no|medium">
+          <span class="val">How much would it hurt? <b>some</b></span>
+          <span class="muted">→</span>
+          <select data-select="active|small|no|medium"><option value="defer" >Defer</option><option value="scheduled" selected>Plan update</option><option value="out-of-cycle" >Update soon</option><option value="immediate" >Act now</option></select>
+          <span class="std" title="SSVC row 49">scheduled</span>
+          <span class="n " data-count>0</span>
+        </div>
+        <ul class="fan" data-fan="active|small|no|medium"></ul>
+      
+        <div class="leaf zero" data-leaf="active|small|no|high">
+          <span class="val">How much would it hurt? <b>a lot</b></span>
+          <span class="muted">→</span>
+          <select data-select="active|small|no|high"><option value="defer" >Defer</option><option value="scheduled" >Plan update</option><option value="out-of-cycle" selected>Update soon</option><option value="immediate" >Act now</option></select>
+          <span class="std" title="SSVC row 50">out-of-cycle</span>
+          <span class="n " data-count>0</span>
+        </div>
+        <ul class="fan" data-fan="active|small|no|high"></ul>
+      
+        <div class="leaf zero" data-leaf="active|small|no|very high">
+          <span class="val">How much would it hurt? <b>business-stopping</b></span>
+          <span class="muted">→</span>
+          <select data-select="active|small|no|very high"><option value="defer" >Defer</option><option value="scheduled" >Plan update</option><option value="out-of-cycle" selected>Update soon</option><option value="immediate" >Act now</option></select>
+          <span class="std" title="SSVC row 51">out-of-cycle</span>
+          <span class="n " data-count>0</span>
+        </div>
+        <ul class="fan" data-fan="active|small|no|very high"></ul>
+      
+      </div></details>
+    
+      <details class="node"  data-node="active|small|yes"><summary><span>Can the attack run by itself? <b>yes</b></span><span class="n " data-count>0</span></summary>
+      <div class="lvl">
+      
+        <div class="leaf zero" data-leaf="active|small|yes|low">
+          <span class="val">How much would it hurt? <b>a little</b></span>
+          <span class="muted">→</span>
+          <select data-select="active|small|yes|low"><option value="defer" >Defer</option><option value="scheduled" selected>Plan update</option><option value="out-of-cycle" >Update soon</option><option value="immediate" >Act now</option></select>
+          <span class="std" title="SSVC row 52">scheduled</span>
+          <span class="n " data-count>0</span>
+        </div>
+        <ul class="fan" data-fan="active|small|yes|low"></ul>
+      
+        <div class="leaf zero" data-leaf="active|small|yes|medium">
+          <span class="val">How much would it hurt? <b>some</b></span>
+          <span class="muted">→</span>
+          <select data-select="active|small|yes|medium"><option value="defer" >Defer</option><option value="scheduled" >Plan update</option><option value="out-of-cycle" selected>Update soon</option><option value="immediate" >Act now</option></select>
+          <span class="std" title="SSVC row 53">out-of-cycle</span>
+          <span class="n " data-count>0</span>
+        </div>
+        <ul class="fan" data-fan="active|small|yes|medium"></ul>
+      
+        <div class="leaf zero" data-leaf="active|small|yes|high">
+          <span class="val">How much would it hurt? <b>a lot</b></span>
+          <span class="muted">→</span>
+          <select data-select="active|small|yes|high"><option value="defer" >Defer</option><option value="scheduled" >Plan update</option><option value="out-of-cycle" selected>Update soon</option><option value="immediate" >Act now</option></select>
+          <span class="std" title="SSVC row 54">out-of-cycle</span>
+          <span class="n " data-count>0</span>
+        </div>
+        <ul class="fan" data-fan="active|small|yes|high"></ul>
+      
+        <div class="leaf zero" data-leaf="active|small|yes|very high">
+          <span class="val">How much would it hurt? <b>business-stopping</b></span>
+          <span class="muted">→</span>
+          <select data-select="active|small|yes|very high"><option value="defer" >Defer</option><option value="scheduled" >Plan update</option><option value="out-of-cycle" selected>Update soon</option><option value="immediate" >Act now</option></select>
+          <span class="std" title="SSVC row 55">out-of-cycle</span>
+          <span class="n " data-count>0</span>
+        </div>
+        <ul class="fan" data-fan="active|small|yes|very high"></ul>
+      
+      </div></details>
+    
+    </div></details>
+  
+</div>
+<button class="toggle" id="show-all">Show the branches nothing landed on</button>
+<h2>What each answer means for people</h2>
+<p class="muted">The tree ends in an answer. This table is what the answer does. It is the other half of the policy, and it is four rows.</p>
+<table><tr><th>Answer</th><th>Who gets the full notice</th><th>Acknowledge within</th><th>Plan within</th><th>Escalate after</th><th>Digest allowed</th></tr>
+<tr><td><span class="tag now">Act now</span></td><td>owner and on-call</td><td>2 hours</td><td>8 hours</td><td>24 hours</td><td>no</td></tr><tr><td><span class="tag soon">Update soon</span></td><td>owner</td><td>2 days</td><td>7 days</td><td>7 days</td><td>no</td></tr><tr><td><span class="tag plan">Plan update</span></td><td>owner</td><td>7 days</td><td>30 days</td><td>30 days</td><td>yes</td></tr><tr><td><span class="tag defer">Defer</span></td><td>nobody; listed under “why was this not sent”</td><td>–</td><td>–</td><td>–</td><td>yes</td></tr>
+</table>
+<p class="muted" style="margin-top:8px">Every answer also sends one status line to the accountable person on the asset, if there is one. Escalation contacts hear nothing unless the window passes.</p>
+<h2>Your edited policy file</h2>
+<p class="muted">Copy this into a file and run <code>patchsignal replay --policy yourfile.csv</code>. Unchanged until you edit an answer.</p>
+<textarea id="policy-csv" readonly></textarea>
+</section>
+
+<p class="muted" style="margin-top:32px">Facts come from CISA and the inventory. Estimates are PatchSignal's own matching and mapping and are labeled as such. An estimate never lowers urgency on its own. Versions are never assumed. Decision vocabulary: SSVC v2, SEI/CERT, Carnegie Mellon University.</p>
+</main>
+<script id="data" type="application/json">{"notices": [{"id": 0, "key": "CVE-2026-15409|Branch VPN appliance", "leaf": "active|open|yes|high", "altLeaf": "active|open|no|high", "question": false, "sent": true, "cve": "CVE-2026-15409", "asset": "Branch VPN appliance", "to": "dana@acme.example", "state": null}, {"id": 1, "key": "CVE-2026-15410|Branch VPN appliance", "leaf": "active|open|yes|high", "altLeaf": "active|open|no|high", "question": true, "sent": true, "cve": "CVE-2026-15410", "asset": "Branch VPN appliance", "to": "dana@acme.example", "state": null}, {"id": 2, "key": "CVE-2025-68686|HQ VPN gateway", "leaf": "active|open|yes|high", "altLeaf": "active|open|no|high", "question": false, "sent": true, "cve": "CVE-2025-68686", "asset": "HQ VPN gateway", "to": "dana@acme.example", "state": null}, {"id": 3, "key": "CVE-2026-18577|RMM platform", "leaf": "active|open|yes|high", "altLeaf": "active|open|no|high", "question": false, "sent": true, "cve": "CVE-2026-18577", "asset": "RMM platform", "to": "priya@acme.example", "state": null}, {"id": 4, "key": "CVE-2026-18556|RMM platform", "leaf": "active|open|yes|high", "altLeaf": "active|open|no|high", "question": false, "sent": true, "cve": "CVE-2026-18556", "asset": "RMM platform", "to": "priya@acme.example", "state": null}, {"id": 5, "key": "CVE-2026-73570|Mail server", "leaf": "active|open|yes|high", "altLeaf": "active|open|no|high", "question": false, "sent": true, "cve": "CVE-2026-73570", "asset": "Mail server", "to": "priya@acme.example", "state": null}, {"id": 6, "key": "CVE-2026-8452|Remote desktop gateway", "leaf": "active|open|yes|high", "altLeaf": "active|open|no|high", "question": false, "sent": true, "cve": "CVE-2026-8452", "asset": "Remote desktop gateway", "to": "dana@acme.example", "state": null}, {"id": 7, "key": "CVE-2026-83548|Branch VPN appliance", "leaf": "active|open|yes|high", "altLeaf": "active|open|no|high", "question": false, "sent": true, "cve": "CVE-2026-83548", "asset": "Branch VPN appliance", "to": "dana@acme.example", "state": null}, {"id": 8, "key": "CVE-2026-83549|Branch VPN appliance", "leaf": "active|open|yes|high", "altLeaf": "active|open|no|high", "question": true, "sent": true, "cve": "CVE-2026-83549", "asset": "Branch VPN appliance", "to": "dana@acme.example", "state": null}, {"id": 9, "key": "CVE-2026-75650|Web store", "leaf": "active|open|yes|high", "altLeaf": "active|open|no|high", "question": false, "sent": true, "cve": "CVE-2026-75650", "asset": "Web store", "to": "sam@acme.example", "state": null}, {"id": 10, "key": "CVE-2026-86218|RMM platform", "leaf": "active|open|yes|high", "altLeaf": "active|open|no|high", "question": false, "sent": true, "cve": "CVE-2026-86218", "asset": "RMM platform", "to": "priya@acme.example", "state": null}, {"id": 11, "key": "CVE-2026-19490|Remote desktop gateway", "leaf": "active|open|yes|high", "altLeaf": "active|open|no|high", "question": false, "sent": true, "cve": "CVE-2026-19490", "asset": "Remote desktop gateway", "to": "dana@acme.example", "state": null}, {"id": 12, "key": "CVE-2025-25249|HQ VPN gateway", "leaf": "active|open|yes|high", "altLeaf": "active|open|no|high", "question": false, "sent": true, "cve": "CVE-2025-25249", "asset": "HQ VPN gateway", "to": "dana@acme.example", "state": null}, {"id": 13, "key": "CVE-2026-34910|Wi-Fi controller", "leaf": "active|controlled|yes|medium", "altLeaf": "active|controlled|no|medium", "question": false, "sent": true, "cve": "CVE-2026-34910", "asset": "Wi-Fi controller", "to": "dana@acme.example", "state": null}, {"id": 14, "key": "CVE-2026-34909|Wi-Fi controller", "leaf": "active|controlled|yes|medium", "altLeaf": "active|controlled|no|medium", "question": false, "sent": true, "cve": "CVE-2026-34909", "asset": "Wi-Fi controller", "to": "dana@acme.example", "state": null}, {"id": 15, "key": "CVE-2026-34908|Wi-Fi controller", "leaf": "active|controlled|yes|medium", "altLeaf": "active|controlled|no|medium", "question": false, "sent": true, "cve": "CVE-2026-34908", "asset": "Wi-Fi controller", "to": "dana@acme.example", "state": null}, {"id": 16, "key": "CVE-2026-45659|Intranet portal", "leaf": "active|controlled|yes|medium", "altLeaf": "active|controlled|no|medium", "question": false, "sent": true, "cve": "CVE-2026-45659", "asset": "Intranet portal", "to": "priya@acme.example", "state": null}, {"id": 17, "key": "CVE-2026-56164|Intranet portal", "leaf": "active|controlled|yes|medium", "altLeaf": "active|controlled|no|medium", "question": false, "sent": true, "cve": "CVE-2026-56164", "asset": "Intranet portal", "to": "priya@acme.example", "state": null}, {"id": 18, "key": "CVE-2026-58644|Intranet portal", "leaf": "active|controlled|yes|medium", "altLeaf": "active|controlled|no|medium", "question": false, "sent": true, "cve": "CVE-2026-58644", "asset": "Intranet portal", "to": "priya@acme.example", "state": null}, {"id": 19, "key": "CVE-2026-50522|Intranet portal", "leaf": "active|controlled|yes|medium", "altLeaf": "active|controlled|no|medium", "question": false, "sent": true, "cve": "CVE-2026-50522", "asset": "Intranet portal", "to": "priya@acme.example", "state": null}, {"id": 20, "key": "CVE-2026-34486|Legacy app server", "leaf": "active|open|yes|medium", "altLeaf": "active|open|no|medium", "question": false, "sent": false, "cve": "CVE-2026-34486", "asset": "Legacy app server", "to": "sam@acme.example", "state": null}, {"id": 21, "key": "CVE-2026-63077|Build server", "leaf": "active|controlled|yes|low", "altLeaf": "active|controlled|no|low", "question": false, "sent": true, "cve": "CVE-2026-63077", "asset": "Build server", "to": "sam@acme.example", "state": null}, {"id": 22, "key": "CVE-2026-20349|Old lab firewall", "leaf": "active|controlled|yes|low", "altLeaf": "active|controlled|no|low", "question": false, "sent": false, "cve": "CVE-2026-20349", "asset": "Old lab firewall", "to": "dana@acme.example", "state": null}, {"id": 23, "key": "CVE-2026-68820|File server", "leaf": "active|controlled|yes|medium", "altLeaf": "active|controlled|no|medium", "question": true, "sent": true, "cve": "CVE-2026-68820", "asset": "File server", "to": "priya@acme.example", "state": null}, {"id": 24, "key": "CVE-2026-59310|Virtualization manager", "leaf": "active|controlled|yes|high", "altLeaf": "active|controlled|no|high", "question": false, "sent": true, "cve": "CVE-2026-59310", "asset": "Virtualization manager", "to": "priya@acme.example", "state": null}, {"id": 25, "key": "CVE-2026-55040|Intranet portal", "leaf": "active|controlled|yes|medium", "altLeaf": "active|controlled|no|medium", "question": false, "sent": true, "cve": "CVE-2026-55040", "asset": "Intranet portal", "to": "priya@acme.example", "state": null}, {"id": 26, "key": "CVE-2026-82078|Print server", "leaf": "active|controlled|yes|low", "altLeaf": "active|controlled|no|low", "question": false, "sent": true, "cve": "CVE-2026-82078", "asset": "Print server", "to": "security@example.com", "state": null}, {"id": 27, "key": "CVE-2026-81578|Print server", "leaf": "active|controlled|yes|low", "altLeaf": "active|controlled|no|low", "question": false, "sent": true, "cve": "CVE-2026-81578", "asset": "Print server", "to": "security@example.com", "state": null}, {"id": 28, "key": "CVE-2026-81963|File server", "leaf": "active|controlled|yes|medium", "altLeaf": "active|controlled|no|medium", "question": true, "sent": true, "cve": "CVE-2026-81963", "asset": "File server", "to": "priya@acme.example", "state": null}, {"id": 29, "key": "CVE-2026-85880|File server", "leaf": "active|controlled|yes|medium", "altLeaf": "active|controlled|no|medium", "question": true, "sent": true, "cve": "CVE-2026-85880", "asset": "File server", "to": "priya@acme.example", "state": null}, {"id": 30, "key": "CVE-2026-25089|HQ VPN gateway", "leaf": "", "altLeaf": "", "question": false, "sent": true, "cve": "CVE-2026-25089", "asset": "HQ VPN gateway", "to": "dana@acme.example", "state": null}, {"id": 31, "key": "CVE-2026-39808|HQ VPN gateway", "leaf": "", "altLeaf": "", "question": false, "sent": true, "cve": "CVE-2026-39808", "asset": "HQ VPN gateway", "to": "dana@acme.example", "state": null}], "rows": [{"row": 0, "values": ["none", "small", "no", "low"], "outcome": "defer"}, {"row": 1, "values": ["none", "small", "no", "medium"], "outcome": "defer"}, {"row": 2, "values": ["none", "small", "no", "high"], "outcome": "scheduled"}, {"row": 3, "values": ["none", "small", "no", "very high"], "outcome": "scheduled"}, {"row": 4, "values": ["none", "small", "yes", "low"], "outcome": "defer"}, {"row": 5, "values": ["none", "small", "yes", "medium"], "outcome": "scheduled"}, {"row": 6, "values": ["none", "small", "yes", "high"], "outcome": "scheduled"}, {"row": 7, "values": ["none", "small", "yes", "very high"], "outcome": "scheduled"}, {"row": 8, "values": ["none", "controlled", "no", "low"], "outcome": "defer"}, {"row": 9, "values": ["none", "controlled", "no", "medium"], "outcome": "scheduled"}, {"row": 10, "values": ["none", "controlled", "no", "high"], "outcome": "scheduled"}, {"row": 11, "values": ["none", "controlled", "no", "very high"], "outcome": "scheduled"}, {"row": 12, "values": ["none", "controlled", "yes", "low"], "outcome": "scheduled"}, {"row": 13, "values": ["none", "controlled", "yes", "medium"], "outcome": "scheduled"}, {"row": 14, "values": ["none", "controlled", "yes", "high"], "outcome": "scheduled"}, {"row": 15, "values": ["none", "controlled", "yes", "very high"], "outcome": "scheduled"}, {"row": 16, "values": ["none", "open", "no", "low"], "outcome": "defer"}, {"row": 17, "values": ["none", "open", "no", "medium"], "outcome": "scheduled"}, {"row": 18, "values": ["none", "open", "no", "high"], "outcome": "scheduled"}, {"row": 19, "values": ["none", "open", "no", "very high"], "outcome": "scheduled"}, {"row": 20, "values": ["none", "open", "yes", "low"], "outcome": "scheduled"}, {"row": 21, "values": ["none", "open", "yes", "medium"], "outcome": "scheduled"}, {"row": 22, "values": ["none", "open", "yes", "high"], "outcome": "scheduled"}, {"row": 23, "values": ["none", "open", "yes", "very high"], "outcome": "out-of-cycle"}, {"row": 24, "values": ["public poc", "small", "no", "low"], "outcome": "defer"}, {"row": 25, "values": ["public poc", "small", "no", "medium"], "outcome": "scheduled"}, {"row": 26, "values": ["public poc", "small", "no", "high"], "outcome": "scheduled"}, {"row": 27, "values": ["public poc", "small", "no", "very high"], "outcome": "scheduled"}, {"row": 28, "values": ["public poc", "small", "yes", "low"], "outcome": "scheduled"}, {"row": 29, "values": ["public poc", "small", "yes", "medium"], "outcome": "scheduled"}, {"row": 30, "values": ["public poc", "small", "yes", "high"], "outcome": "scheduled"}, {"row": 31, "values": ["public poc", "small", "yes", "very high"], "outcome": "scheduled"}, {"row": 32, "values": ["public poc", "controlled", "no", "low"], "outcome": "defer"}, {"row": 33, "values": ["public poc", "controlled", "no", "medium"], "outcome": "scheduled"}, {"row": 34, "values": ["public poc", "controlled", "no", "high"], "outcome": "scheduled"}, {"row": 35, "values": ["public poc", "controlled", "no", "very high"], "outcome": "scheduled"}, {"row": 36, "values": ["public poc", "controlled", "yes", "low"], "outcome": "scheduled"}, {"row": 37, "values": ["public poc", "controlled", "yes", "medium"], "outcome": "scheduled"}, {"row": 38, "values": ["public poc", "controlled", "yes", "high"], "outcome": "scheduled"}, {"row": 39, "values": ["public poc", "controlled", "yes", "very high"], "outcome": "out-of-cycle"}, {"row": 40, "values": ["public poc", "open", "no", "low"], "outcome": "scheduled"}, {"row": 41, "values": ["public poc", "open", "no", "medium"], "outcome": "scheduled"}, {"row": 42, "values": ["public poc", "open", "no", "high"], "outcome": "scheduled"}, {"row": 43, "values": ["public poc", "open", "no", "very high"], "outcome": "out-of-cycle"}, {"row": 44, "values": ["public poc", "open", "yes", "low"], "outcome": "scheduled"}, {"row": 45, "values": ["public poc", "open", "yes", "medium"], "outcome": "scheduled"}, {"row": 46, "values": ["public poc", "open", "yes", "high"], "outcome": "out-of-cycle"}, {"row": 47, "values": ["public poc", "open", "yes", "very high"], "outcome": "out-of-cycle"}, {"row": 48, "values": ["active", "small", "no", "low"], "outcome": "scheduled"}, {"row": 49, "values": ["active", "small", "no", "medium"], "outcome": "scheduled"}, {"row": 50, "values": ["active", "small", "no", "high"], "outcome": "out-of-cycle"}, {"row": 51, "values": ["active", "small", "no", "very high"], "outcome": "out-of-cycle"}, {"row": 52, "values": ["active", "small", "yes", "low"], "outcome": "scheduled"}, {"row": 53, "values": ["active", "small", "yes", "medium"], "outcome": "out-of-cycle"}, {"row": 54, "values": ["active", "small", "yes", "high"], "outcome": "out-of-cycle"}, {"row": 55, "values": ["active", "small", "yes", "very high"], "outcome": "out-of-cycle"}, {"row": 56, "values": ["active", "controlled", "no", "low"], "outcome": "scheduled"}, {"row": 57, "values": ["active", "controlled", "no", "medium"], "outcome": "scheduled"}, {"row": 58, "values": ["active", "controlled", "no", "high"], "outcome": "out-of-cycle"}, {"row": 59, "values": ["active", "controlled", "no", "very high"], "outcome": "out-of-cycle"}, {"row": 60, "values": ["active", "controlled", "yes", "low"], "outcome": "out-of-cycle"}, {"row": 61, "values": ["active", "controlled", "yes", "medium"], "outcome": "out-of-cycle"}, {"row": 62, "values": ["active", "controlled", "yes", "high"], "outcome": "out-of-cycle"}, {"row": 63, "values": ["active", "controlled", "yes", "very high"], "outcome": "out-of-cycle"}, {"row": 64, "values": ["active", "open", "no", "low"], "outcome": "scheduled"}, {"row": 65, "values": ["active", "open", "no", "medium"], "outcome": "out-of-cycle"}, {"row": 66, "values": ["active", "open", "no", "high"], "outcome": "out-of-cycle"}, {"row": 67, "values": ["active", "open", "no", "very high"], "outcome": "immediate"}, {"row": 68, "values": ["active", "open", "yes", "low"], "outcome": "out-of-cycle"}, {"row": 69, "values": ["active", "open", "yes", "medium"], "outcome": "out-of-cycle"}, {"row": 70, "values": ["active", "open", "yes", "high"], "outcome": "immediate"}, {"row": 71, "values": ["active", "open", "yes", "very high"], "outcome": "immediate"}], "header": ["row", "Exploitation v1.1.0", "System Exposure v1.0.1", "Automatable v2.0.0", "Human Impact v2.0.2", "Defer, Scheduled, Out-of-Cycle, Immediate v1.0.0"], "words": {"immediate": "Act now", "out-of-cycle": "Update soon", "scheduled": "Plan update", "defer": "Defer"}, "klass": {"immediate": "now", "out-of-cycle": "soon", "scheduled": "plan", "defer": "defer"}, "outcomes": ["defer", "scheduled", "out-of-cycle", "immediate"], "delivery": {"immediate": {"ack": "2 hours", "plan": "8 hours", "esc": "24 hours", "oncall": true}, "out-of-cycle": {"ack": "2 days", "plan": "7 days", "esc": "7 days", "oncall": false}, "scheduled": {"ack": "7 days", "plan": "30 days", "esc": "30 days", "oncall": false}, "defer": {"ack": "", "plan": "", "esc": "", "oncall": false}}, "points": [{"name": "Exploitation", "question": "Is it being attacked?", "values": ["none", "public poc", "active"], "plain": {"none": "no", "public poc": "a proof exists", "active": "yes, right now"}, "clause": {"none": "nobody is attacking it", "public poc": "a public proof of attack exists", "active": "attackers are using it right now"}}, {"name": "System Exposure", "question": "Can attackers reach it?", "values": ["small", "controlled", "open"], "plain": {"small": "isolated", "controlled": "from inside only", "open": "from the internet"}, "clause": {"small": "it's isolated", "controlled": "it's reachable only from inside", "open": "it's reachable from the internet"}}, {"name": "Automatable", "question": "Can the attack run by itself?", "values": ["no", "yes"], "plain": {"no": "no, it needs a person", "yes": "yes"}, "clause": {"no": "the attack needs a person's help", "yes": "the attack can run by itself"}}, {"name": "Human Impact", "question": "How much would it hurt?", "values": ["low", "medium", "high", "very high"], "plain": {"low": "a little", "medium": "some", "high": "a lot", "very high": "business-stopping"}, "clause": {"low": "it would hurt a little", "medium": "it would hurt some", "high": "it would hurt a lot", "very high": "it could stop the business"}}]}</script>
+<script>
+(function(){
+  const D = JSON.parse(document.getElementById('data').textContent);
+  const PLAIN = {defer:'Defer', scheduled:'Plan update', 'out-of-cycle':'Update soon', immediate:'Act now'};
+  const outcomeOf = {}; D.rows.forEach(r => outcomeOf[r.values.join('|')] = r.outcome);
+  const pt = D.points;  // [exploitation, exposure, automatable, impact]
+  const $$ = (s, el) => Array.from((el||document).querySelectorAll(s));
+  const byId = {}; D.notices.forEach(n => byId[n.id] = n);
+
+  function showTab(name){
+    $$('.tab').forEach(x => x.classList.toggle('on', x.dataset.tab === name));
+    document.getElementById('tab-notices').hidden = name !== 'notices';
+    document.getElementById('tab-policy').hidden = name !== 'policy';
+  }
+  $$('.tab').forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
+
+  function because(leaf){
+    const v = leaf.split('|');
+    return pt[1].clause[v[1]] + ', ' + pt[2].clause[v[2]] + ', and ' + pt[3].clause[v[3]];
+  }
+  function plainLines(){
+    const imp = pt[3].values, word = x => pt[3].plain[x];
+    const runs = prefix => { const out = []; imp.forEach(h => { const o = outcomeOf[prefix + '|' + h]; if (out.length && out[out.length-1][0] === o) out[out.length-1][1].push(h); else out.push([o, [h]]); }); return out; };
+    const phrase = r => {
+      if (r.length === 1) return PLAIN[r[0][0]] + '.';
+      const main = r.reduce((a, b) => b[1].length > a[1].length ? b : a);
+      const parts = [PLAIN[main[0]]];
+      r.forEach(([o, his]) => { if (o === main[0]) return;
+        let cond;
+        if (his[his.length-1] === imp[imp.length-1]) cond = his[0] === 'very high' ? 'if it could stop the business' : 'if it would hurt ' + word(his[0]) + ' or more';
+        else if (his[0] === imp[0]) cond = 'if it would only hurt ' + word(his[his.length-1]);
+        else cond = 'if it would hurt ' + his.map(word).join(' or ');
+        parts.push(PLAIN[o] + ' ' + cond); });
+      return parts.join('; ') + '.';
+    };
+    const lead = {open:'Reachable from the internet', controlled:'Reachable from inside only', small:'Isolated'};
+    const lines = [];
+    ['open','controlled','small'].forEach(ex => {
+      const y = runs('active|' + ex + '|yes'), n = runs('active|' + ex + '|no');
+      if (JSON.stringify(y) === JSON.stringify(n)) lines.push(lead[ex] + ': ' + phrase(y));
+      else { lines.push(lead[ex] + ' and the attack can run by itself: ' + phrase(y)); lines.push(lead[ex] + ' but the attack needs a person: ' + phrase(n)); }
+    });
+    return lines;
+  }
+
+  function repaint(){
+    const totals = {}; D.outcomes.forEach(o => totals[o] = 0);
+    const counts = {};
+    D.notices.forEach(n => { if (!n.leaf) return; totals[outcomeOf[n.leaf]] += 1; counts[n.leaf] = (counts[n.leaf]||0) + 1; });
+    D.outcomes.forEach(o => { const el = document.querySelector('[data-total="'+o+'"]'); if (el) el.textContent = totals[o]; });
+    // cards
+    $$('.card[data-id]').forEach(card => {
+      const n = byId[card.dataset.id]; if (!n || !n.leaf) return;
+      const o = outcomeOf[n.leaf];
+      card.dataset.leaf = n.leaf; card.className = 'card ' + D.klass[o] + (card.classList.contains('lit') ? ' lit' : '');
+      card.querySelector('[data-badge]').textContent = D.words[o]; card.querySelector('[data-badge]').className = 'tag ' + D.klass[o];
+      const b = card.querySelector('[data-because]'); if (b) b.textContent = D.words[o] + ', because ' + because(n.leaf) + '.';
+    });
+    // tree leaves, fans, branch counts
+    $$('.leaf').forEach(leaf => {
+      const k = leaf.dataset.leaf, c = counts[k] || 0;
+      leaf.classList.toggle('zero', !c);
+      leaf.querySelector('[data-count]').textContent = c; leaf.querySelector('[data-count]').classList.toggle('hot', !!c);
+      leaf.querySelector('.std').textContent = outcomeOf[k];
+      const fan = document.querySelector('[data-fan="'+k+'"]'); fan.innerHTML = '';
+      D.notices.filter(n => n.leaf === k).forEach(n => { const li = document.createElement('li'); li.className = n.sent ? '' : 'sup'; li.dataset.id = n.id;
+        li.innerHTML = '<span class="tag '+D.klass[outcomeOf[k]]+'">'+D.words[outcomeOf[k]]+'</span>'+n.cve+' on '+n.asset+' → '+n.to+(n.sent?'':' (suppressed)'); fan.appendChild(li); });
+    });
+    $$('[data-node]').forEach(node => { const pre = node.dataset.node + '|'; let c = 0; Object.keys(counts).forEach(k => { if (k.startsWith(pre)) c += counts[k]; });
+      const el = node.querySelector(':scope > summary [data-count]'); el.textContent = c; el.classList.toggle('hot', !!c); });
+    document.getElementById('plain-lines').innerHTML = plainLines().map(l => '<li>'+l+'</li>').join('');
+    const lines = [D.header.join(',')];
+    D.rows.slice().sort((a,b) => a.row - b.row).forEach(r => lines.push([r.row, ...r.values, outcomeOf[r.values.join('|')]].join(',')));
+    document.getElementById('policy-csv').value = lines.join('\n');
+  }
+
+  function clearLit(){ $$('.lit').forEach(el => el.classList.remove('lit')); }
+  function light(leafKey, fromCard){
+    clearLit();
+    const v = leafKey.split('|');
+    ['active|'+v[1], 'active|'+v[1]+'|'+v[2]].forEach(k => { const n = document.querySelector('[data-node="'+k+'"]'); if (n) { n.open = true; n.querySelector(':scope > summary').classList.add('lit'); } });
+    const leaf = document.querySelector('.leaf[data-leaf="'+leafKey+'"]'); if (leaf) leaf.classList.add('lit');
+    if (fromCard) { showTab('policy'); leaf && leaf.scrollIntoView({block:'center', behavior:'smooth'}); }
+    else { showTab('notices'); const cards = $$('.card[data-leaf="'+leafKey+'"]'); cards.forEach(c => c.classList.add('lit')); cards[0] && cards[0].scrollIntoView({block:'start', behavior:'smooth'}); }
+  }
+  $$('[data-show-path]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); light(a.closest('.card').dataset.leaf, true); }));
+  $$('.leaf').forEach(leaf => leaf.addEventListener('click', e => { if (e.target.tagName === 'SELECT') return; light(leaf.dataset.leaf, false); }));
+  $$('[data-select]').forEach(sel => sel.addEventListener('change', () => { outcomeOf[sel.dataset.select] = sel.value; repaint(); }));
+  $$('[data-flip]').forEach(btn => btn.addEventListener('click', () => {
+    const card = btn.closest('.card'), n = byId[card.dataset.id]; if (!n) return;
+    const on = btn.classList.toggle('on'); btn.textContent = on ? 'Confirmed: needs a person (undo)' : 'Yes, it needs a person';
+    n.leaf = on ? n.altLeaf : n.origLeaf; repaint();
+  }));
+  D.notices.forEach(n => n.origLeaf = n.leaf);
+
+  // ---- buttons: what a person did. Tries the server; falls back to this browser's storage for the static report.
+  let who = ''; try { who = localStorage.getItem('ps-who') || ''; } catch (e) {}
+  const localState = (() => { try { return JSON.parse(localStorage.getItem('ps-state') || '{}'); } catch (e) { return {}; } })();
+  function sentence(st){ if (!st) return ''; if (st.sentence) return st.sentence;
+    if (st.action === 'assigned') return 'Assigned to ' + (st.note || 'someone') + ' by ' + st.by + '.';
+    if (st.action === 'not_applicable') return st.by + ' said this does not apply' + (st.note ? ': ' + st.note + '.' : '.');
+    const w = {acknowledged:'Acknowledged', fixed:'Fixed', reopened:'Reopened'}[st.action]; return w + ' by ' + st.by + (st.note ? ': ' + st.note + '.' : '.'); }
+  function paintState(card, st){
+    const el = card.querySelector('[data-state]');
+    const active = st && st.action !== 'reopened';
+    el.textContent = active ? sentence(st) : 'Nobody has acted on this yet.'; el.classList.toggle('empty', !active);
+    card.classList.toggle('done', !!(active && (st.action === 'fixed' || st.action === 'not_applicable')));
+    card.querySelectorAll('[data-action]').forEach(b => { b.hidden = b.dataset.action === 'reopened' ? !active : !!(active && (st.action === 'fixed' || st.action === 'not_applicable')); });
+    const totals = {open:0, acknowledged:0, assigned:0, fixed:0};
+    $$('.card[data-id]').forEach(c => { const n = byId[c.dataset.id]; const s2 = n && n.state && n.state.action !== 'reopened' ? n.state.action : null;
+      if (!s2) totals.open++; else if (totals[s2] !== undefined) totals[s2]++; });
+    Object.keys(totals).forEach(k => { const t = document.querySelector('[data-state-total="'+k+'"]'); if (t) t.textContent = totals[k]; });
+  }
+  $$('.card[data-id]').forEach(card => { const n = byId[card.dataset.id]; if (n && localState[n.key] && !n.state) n.state = localState[n.key]; if (n && n.state) paintState(card, n.state); });
+  $$('[data-action]').forEach(btn => btn.addEventListener('click', async () => {
+    const card = btn.closest('.card'), n = byId[card.dataset.id], action = btn.dataset.action; if (!n) return;
+    if (!who) { who = prompt('Your name, once:') || ''; try { localStorage.setItem('ps-who', who); } catch (e) {} if (!who) return; }
+    let note = '';
+    if (action === 'assigned') { note = prompt('Assign to whom?') || ''; if (!note) return; }
+    if (action === 'not_applicable') { note = prompt('Why does it not apply? (product not used, version not affected, already patched, isolated…)') || ''; if (!note) return; }
+    let st = {action, by: who, note};
+    try {
+      const res = await fetch('/act', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key: n.key, action, by: who, note})});
+      if (res.ok) st = (await res.json()).state; else throw new Error('server said no');
+    } catch (e) { localState[n.key] = st; try { localStorage.setItem('ps-state', JSON.stringify(localState)); } catch (e2) {} }
+    n.state = st; paintState(card, st);
+  }));
+  document.getElementById('show-all').addEventListener('click', e => { const t = document.getElementById('tree'); t.classList.toggle('all'); e.target.textContent = t.classList.contains('all') ? 'Hide the branches nothing landed on' : 'Show the branches nothing landed on'; });
+  repaint();
+})();
+</script>
+</body></html>
