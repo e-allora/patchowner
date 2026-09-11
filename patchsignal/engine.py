@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from datetime import date
 
 from .decide import Decision, Summary, decide, summarize
+from .health import Health, assess_health
 from .inventory import parse_inventory
 from .kev import in_window, load_feed
 from .matching import match_all
@@ -17,6 +18,7 @@ from .state import StateStore
 class Replay:
     summary: Summary
     decisions: list[Decision]
+    health: Health
     html: str
 
 
@@ -32,4 +34,5 @@ def run_replay(csv_text: str, *, inventory_name: str, days: int = 90, fallback_e
     decisions = decide(matches, fallback_email, fallback_name, today, policy, state)
     summary = summarize(decisions, days=days, catalog_version=version, policy_name=policy.name, advisories_in_window=len(window),
                         assets=len(assets), budget=budget, warnings=warnings)
-    return Replay(summary, decisions, render_html(summary, decisions, policy, inventory_name=inventory_name))
+    health = assess_health(assets, decisions, summary, today=today)
+    return Replay(summary, decisions, health, render_html(summary, decisions, policy, health, inventory_name=inventory_name))

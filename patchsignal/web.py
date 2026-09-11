@@ -36,12 +36,14 @@ def act(a: Act) -> JSONResponse:
 
 FORM = """<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PatchSignal</title>
-<style>body{margin:0;background:#f7f7f5;color:#1c1c1a;font:16px/1.5 system-ui,sans-serif;padding:32px 16px}
-main{max-width:560px;margin:0 auto;background:#fff;border:1px solid #e4e4df;border-radius:12px;padding:24px}
-h1{font-size:22px;margin:0 0 6px}p{margin:0 0 16px;color:#6b6b66}label{display:block;font-weight:600;margin:14px 0 6px}
-input,select{font:inherit;padding:8px;border:1px solid #cfcfc9;border-radius:8px;width:100%;box-sizing:border-box}
-button{margin-top:18px;font:inherit;font-weight:600;background:#1c1c1a;color:#fff;border:0;border-radius:8px;padding:10px 18px;cursor:pointer}
-code{font-size:13px;background:#f1f1ee;padding:1px 5px;border-radius:4px}.err{background:#fdecea;border:1px solid #f5c2c0;border-radius:8px;padding:10px;margin-bottom:12px}</style></head>
+<style>:root{--bg:#f7f7f5;--card:#fff;--soft:#f1f1ee;--ink:#1c1c1a;--muted:#6b6b66;--line:#e4e4df;--errbg:#fdecea;--errline:#f5c2c0;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#141412;--card:#1e1e1b;--soft:#2a2a26;--ink:#ecebe6;--muted:#a09f98;--line:#33332f;--errbg:#3a1d1a;--errline:#6b2f2a;color-scheme:dark}}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,sans-serif;padding:32px 16px}
+main{max-width:560px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:24px}
+h1{font-size:22px;margin:0 0 6px}p{margin:0 0 16px;color:var(--muted)}label{display:block;font-weight:600;margin:14px 0 6px}
+input,select{font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;width:100%;box-sizing:border-box;background:var(--bg);color:var(--ink)}
+button{margin-top:18px;font:inherit;font-weight:600;background:var(--ink);color:var(--bg);border:0;border-radius:8px;padding:10px 18px;cursor:pointer}
+code{font-size:13px;background:var(--soft);padding:1px 5px;border-radius:4px}.err{background:var(--errbg);border:1px solid var(--errline);border-radius:8px;padding:10px;margin-bottom:12px}</style></head>
 <body><main><h1>PatchSignal</h1><p>Upload your technology list. See exactly which exploited vulnerabilities would have reached whom, and which ones stayed quiet.</p>
 @@ERROR@@
 <form method="post" action="/replay" enctype="multipart/form-data">

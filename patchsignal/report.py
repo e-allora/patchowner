@@ -7,6 +7,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from .health import Health
 from .decide import ACT_NOW, DELIVERY, OUTCOME_TO_URGENCY, PLAN_UPDATE, UPDATE_SOON, WATCH, WHEN_TEXT, Decision, Summary
 from .ssvc import AUTOMATABLE, EXPOSURE, HUMAN_IMPACT, OUTCOME_WORDS, OUTCOMES, POINTS, Policy, plain_policy
 
@@ -44,7 +45,7 @@ def build_tree(policy: Policy, decisions: list[Decision]) -> list[dict]:
     return tree
 
 
-def _client_data(policy: Policy, decisions: list[Decision]) -> str:
+def _client_data(policy: Policy, decisions: list[Decision], share: str) -> str:
     """What the page needs to relabel a leaf and recompute counts without a server."""
     notices = [
         {"id": i, "key": d.key, "leaf": d.leaf_key, "altLeaf": d.alt_leaf_key, "question": bool(d.questions), "sent": d.sent,
@@ -55,16 +56,26 @@ def _client_data(policy: Policy, decisions: list[Decision]) -> str:
     rows = [{"row": row, "values": list(values), "outcome": outcome} for values, (outcome, row) in policy.rows.items()]
     return json.dumps({
         "notices": notices, "rows": rows, "header": policy.header,
+        "share": share,
         "words": OUTCOME_TO_URGENCY, "klass": OUTCOME_KLASS, "outcomes": list(OUTCOMES),
         "delivery": {o: {"ack": dl.acknowledge_within, "plan": dl.plan_within, "esc": dl.escalate_after, "oncall": dl.notify_oncall} for o, dl in DELIVERY.items()},
         "points": [{"name": pt.name, "question": pt.question, "values": list(pt.values), "plain": pt.plain, "clause": pt.clause} for pt in POINTS],
     })
 
 
-def render_html(summary: Summary, decisions: list[Decision], policy: Policy, *, inventory_name: str) -> str:
+def share_text(s: Summary, health: Health, inventory_name: str) -> str:
+    """The plain-text summary the Share button copies: what a person would paste into a chat."""
+    urgent = s.by_urgency.get(ACT_NOW, 0)
+    return (f"PatchSignal replay: KEV catalog {s.catalog_version}, last {s.days} days, against {inventory_name} ({s.assets} assets). "
+            f"{s.advisories_in_window} advisories published, {s.relevant_advisories} touched something we own, "
+            f"{s.sent} notices sent ({urgent} Act now), {s.suppressed} suppressed with a reason. "
+            f"Health: {health.word}" + (f", {health.issues} thing{'s' if health.issues != 1 else ''} to fix." if health.issues else "."))
+
+
+def render_html(summary: Summary, decisions: list[Decision], policy: Policy, health: Health, *, inventory_name: str) -> str:
     tpl = _env.get_template("report.html")
     return tpl.render(
-        s=summary, inventory_name=inventory_name, policy=policy,
+        s=summary, inventory_name=inventory_name, policy=policy, health=health,
         decisions=decisions,
         sent=[d for d in decisions if d.sent],
         suppressed=[d for d in decisions if not d.sent],
@@ -74,5 +85,5 @@ def render_html(summary: Summary, decisions: list[Decision], policy: Policy, *, 
         plain_lines=plain_policy(policy),
         delivery=DELIVERY,
         outcome_words=OUTCOME_WORDS,
-        client_data=_client_data(policy, decisions),
+        client_data=_client_data(policy, decisions, share_text(summary, health, inventory_name)),
     )

@@ -2,8 +2,10 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PatchSignal replay</title>
 <style>
-:root{--bg:#f7f7f5;--card:#fff;--ink:#1c1c1a;--muted:#6b6b66;--line:#e4e4df;--now:#b3261e;--soon:#b26a00;--plan:#2b6cb0;--watch:#5f6b7a;--defer:#8a8a84;--ok:#2e7d32;--lit:#fff3c4;--litline:#e0b400}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px 16px}
+:root{--bg:#f7f7f5;--card:#fff;--soft:#f1f1ee;--ink:#1c1c1a;--muted:#6b6b66;--line:#e4e4df;--now:#b3261e;--soon:#b26a00;--plan:#2b6cb0;--watch:#5f6b7a;--defer:#8a8a84;--ok:#2e7d32;--lit:#fff3c4;--litline:#e0b400;--warnbg:#fff7e6;--warnline:#f1d9a5;--onink:#fff;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141412;--card:#1e1e1b;--soft:#2a2a26;--ink:#ecebe6;--muted:#a09f98;--line:#33332f;--now:#e5534b;--soon:#d9962b;--plan:#5b9cf0;--watch:#8d99a8;--defer:#8a8a84;--ok:#5bb663;--lit:#3d3410;--litline:#c9a400;--warnbg:#2e2612;--warnline:#5c4a1a;--onink:#141412;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141412;--card:#1e1e1b;--soft:#2a2a26;--ink:#ecebe6;--muted:#a09f98;--line:#33332f;--now:#e5534b;--soon:#d9962b;--plan:#5b9cf0;--watch:#8d99a8;--defer:#8a8a84;--ok:#5bb663;--lit:#3d3410;--litline:#c9a400;--warnbg:#2e2612;--warnline:#5c4a1a;--onink:#141412;color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--ink);transition:background .2s,color .2s;font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px 16px}
 main{max-width:960px;margin:0 auto}
 h1{font-size:22px;margin:0 0 4px}h2{font-size:17px;margin:32px 0 12px}
 .sub{color:var(--muted);margin:0 0 16px}
@@ -20,22 +22,22 @@ h1{font-size:22px;margin:0 0 4px}h2{font-size:17px;margin:32px 0 12px}
 .tag.now{background:var(--now)}.tag.soon{background:var(--soon)}.tag.plan{background:var(--plan)}.tag.watch{background:var(--watch)}.tag.defer{background:var(--defer)}
 .card h3{margin:6px 0 8px;font-size:17px}
 .because{margin:0 0 12px;font-size:15px}.because a{color:var(--muted);font-size:13px;margin-left:8px}
-.ask{background:#fff7e6;border:1px solid #f1d9a5;border-radius:8px;padding:8px 12px;margin:0 0 12px;font-size:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.ask button{font:inherit;font-size:13px;border:1px solid #d8b96a;background:#fff;border-radius:6px;padding:4px 10px;cursor:pointer}.ask button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.ask{background:var(--warnbg);border:1px solid var(--warnline);border-radius:8px;padding:8px 12px;margin:0 0 12px;font-size:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ask button{font:inherit;font-size:13px;border:1px solid var(--warnline);background:var(--card);color:var(--ink);border-radius:6px;padding:4px 10px;cursor:pointer}.ask button.on{background:var(--ink);color:var(--onink);border-color:var(--ink)}
 dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin:0}dt{color:var(--muted)}dd{margin:0}
 .btns{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px}
-.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;font-size:14px;text-decoration:none;color:var(--ink)}
-.btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
-button.btn{font:inherit;cursor:pointer}button.btn:hover{background:#f1f1ee}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:6px 12px;font-size:14px;text-decoration:none;color:var(--ink)}
+.btn.primary{background:var(--ink);color:var(--onink);border-color:var(--ink)}
+button.btn{font:inherit;cursor:pointer}button.btn:hover{background:var(--soft)}.btn.primary:hover{background:var(--ink);opacity:.9}
 .state{margin:10px 0 0;font-size:14px;color:var(--ok);font-weight:600}.state.empty{font-weight:400;font-style:italic}
 .card.done{opacity:.6}
 details{margin-top:10px}summary{cursor:pointer;color:var(--muted);font-size:13px}
 ul.tight{margin:6px 0 0 18px;padding:0}ul.tight li{margin:2px 0}
 .fact::before{content:"Fact · ";color:var(--ok);font-weight:600}.est::before{content:"Estimate · ";color:var(--soon);font-weight:600}
 table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
-th,td{text-align:left;padding:8px 12px;border-top:1px solid var(--line);font-size:14px}th{background:#faf9f6;color:var(--muted);font-weight:600;border-top:0}
-.warn{background:#fff7e6;border:1px solid #f1d9a5;border-radius:10px;padding:10px 14px;margin:10px 0}
-.muted{color:var(--muted)}.empty{color:var(--muted);font-style:italic}code{font-size:13px;background:#f1f1ee;padding:1px 5px;border-radius:4px}
+th,td{text-align:left;padding:8px 12px;border-top:1px solid var(--line);font-size:14px}th{background:var(--soft);color:var(--muted);font-weight:600;border-top:0}
+.warn{background:var(--warnbg);border:1px solid var(--warnline);border-radius:10px;padding:10px 14px;margin:10px 0}
+.muted{color:var(--muted)}.empty{color:var(--muted);font-style:italic}code{font-size:13px;background:var(--soft);padding:1px 5px;border-radius:4px}
 /* plain policy */
 .plain{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin:0 0 16px}
 .plain ol{margin:0;padding-left:20px}.plain li{margin:4px 0}.plain .lbl{color:var(--muted);font-size:13px;margin:0 0 6px}
@@ -44,21 +46,45 @@ th,td{text-align:left;padding:8px 12px;border-top:1px solid var(--line);font-siz
 .node{margin:4px 0}.node>summary{font-size:15px;padding:6px 4px;list-style:none;display:flex;align-items:center;gap:10px;border-radius:6px}
 .node>summary::before{content:"▸";color:var(--muted);width:12px;display:inline-block}.node[open]>summary::before{content:"▾"}
 .node>summary.lit,.leaf.lit{background:var(--lit);box-shadow:0 0 0 2px var(--litline)}
-.node .q{color:var(--muted);font-size:13px}.node .n{margin-left:auto;background:#f1f1ee;border-radius:999px;padding:1px 10px;font-size:13px;color:var(--muted);min-width:24px;text-align:center}
-.n.hot{background:#1c1c1a;color:#fff}
+.node .q{color:var(--muted);font-size:13px}.node .n{margin-left:auto;background:var(--soft);border-radius:999px;padding:1px 10px;font-size:13px;color:var(--muted);min-width:24px;text-align:center}
+.n.hot{background:var(--ink);color:var(--onink)}
 .lvl{margin-left:22px;border-left:2px solid var(--line);padding-left:12px}
 .leaf{display:flex;align-items:center;gap:10px;padding:6px 6px;border-top:1px dashed var(--line);border-radius:6px;cursor:pointer}
-.leaf .val{min-width:150px}.leaf select{font:inherit;font-size:13px;padding:3px 6px;border:1px solid var(--line);border-radius:6px}
+.leaf .val{min-width:150px}.leaf select{font:inherit;font-size:13px;padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)}
 .leaf .std{color:var(--muted);font-size:12px}.leaf.zero{display:none}.tree.all .leaf.zero{display:flex;opacity:.55}.leaf .n{margin-left:auto}
 .fan{margin:0 0 6px 150px;font-size:13px;list-style:none;padding:0}.fan li{margin:2px 0}.fan .tag{font-size:11px;padding:1px 7px}.fan .sup{text-decoration:line-through;color:var(--muted)}
-.chip{display:inline-block;background:#f1f1ee;border-radius:999px;padding:1px 9px;font-size:12px;margin:0 4px 4px 0}
-.toggle{font:inherit;font-size:13px;border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 10px;cursor:pointer;margin:8px 0 0}
-textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospace,monospace;border:1px solid var(--line);border-radius:8px;padding:8px}
-</style></head><body><main>
+.chip{display:inline-block;background:var(--soft);border-radius:999px;padding:1px 9px;font-size:12px;margin:0 4px 4px 0}
+.toggle{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:6px;padding:4px 10px;cursor:pointer;margin:8px 0 0}
+textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospace,monospace;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--card);color:var(--ink)}
+/* top bar: title left, share and theme right */
+.top{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}.top>div:first-child{flex:1 1 320px;min-width:0}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tool{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.tool:hover{background:var(--soft)}.tool svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tool.ok{border-color:var(--ok);color:var(--ok)}.tool svg[hidden]{display:none}
+/* health */
+.grade{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:0 0 16px;flex-wrap:wrap}
+.grade .dot{width:14px;height:14px;border-radius:50%;flex:none}.grade b{font-size:20px}.grade p{margin:0;flex:1 1 300px}
+.dot.h-good{background:var(--ok)}.dot.h-warn{background:var(--soon)}.dot.h-bad{background:var(--now)}
+.checks{display:grid;gap:10px;margin:0 0 8px}
+.check{display:grid;grid-template-columns:22px 1fr auto;gap:4px 12px;align-items:start;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.check .dot{width:12px;height:12px;border-radius:50%;margin-top:6px}.check .lbl{font-weight:600}
+.check .cnt{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px;white-space:nowrap}
+.check .det{grid-column:2/4;font-size:14px}.check .fix{grid-column:2/4;font-size:14px;color:var(--muted)}.check .fix::before{content:"Fix · ";font-weight:600;color:var(--ink)}
+@media (max-width:480px){.top{flex-direction:column}}
+</style>
+<script>try{var t=localStorage.getItem('ps-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+</head><body><main>
+<div class="top"><div>
 <h1>What PatchSignal would have told you</h1>
 <p class="sub">Replay of the CISA Known Exploited Vulnerabilities catalog (version {{ s.catalog_version }}) over the last {{ s.days }} days against <b>{{ inventory_name }}</b> ({{ s.assets }} assets).</p>
+</div><div class="tools">
+<button class="tool" id="share" title="Copy a one-paragraph summary and this page's address"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg><span>Share</span></button>
+<button class="tool" id="download" title="Save this report as one HTML file"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M6 11l6 6 6-6M4 21h16"/></svg><span>Download</span></button>
+<button class="tool" id="theme" title="Switch between light and dark" aria-label="Switch theme"><svg viewBox="0 0 24 24" aria-hidden="true" data-sun><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg viewBox="0 0 24 24" aria-hidden="true" data-moon hidden><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><span data-theme-word>Dark</span></button>
+</div></div>
 
-<div class="tabs"><button class="tab on" data-tab="notices">Notices</button><button class="tab" data-tab="policy">Policy</button></div>
+<div class="tabs"><button class="tab on" data-tab="notices">Notices</button><button class="tab" data-tab="policy">Policy</button><button class="tab" data-tab="health">Health{% if health.issues %} <span class="n hot" style="font-size:11px;padding:0 7px;margin-left:2px;border-radius:999px;background:var(--{{ 'now' if health.grade == 'bad' else 'soon' }});color:#fff">{{ health.issues }}</span>{% endif %}</button></div>
 
 <section id="tab-notices">
 <div class="stats">
@@ -178,6 +204,26 @@ textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospac
 <textarea id="policy-csv" readonly></textarea>
 </section>
 
+<section id="tab-health" hidden>
+<div class="grade"><span class="dot h-{{ health.grade }}"></span><b>{{ health.word }}</b><p>{{ health.headline }}</p></div>
+<div class="stats">
+  <div class="stat"><b>{{ health.active_assets }}</b><span>active assets</span></div>
+  <div class="stat"><b>{{ health.checks|selectattr('status','equalto','good')|list|length }} of {{ health.checks|length }}</b><span>checks passing</span></div>
+  <div class="stat"><b>{{ health.feed_age_days if health.feed_age_days is not none else '?' }}</b><span>days since the catalog was updated</span></div>
+  <div class="stat"><b>{{ health.unhandled_urgent }}</b><span>urgent, nobody has acted</span></div>
+  <div class="stat"><b>{{ health.handled }}</b><span>handled: fixed or does not apply</span></div>
+</div>
+<p class="sub">Can PatchSignal route a notice for every asset, is the catalog current, and is anyone acting on what was sent? Each line is what good looks like, how many rows meet it, and the one thing to do.</p>
+<div class="checks">
+{% for c in health.checks %}<div class="check">
+  <span class="dot h-{{ c.status }}"></span><span class="lbl">{{ c.label }}</span><span class="cnt">{% if c.total %}{{ c.ok }} of {{ c.total }}{% endif %}</span>
+  <span class="det">{{ c.detail }}</span>
+  {% if c.fix %}<span class="fix">{{ c.fix }}</span>{% endif %}
+</div>{% endfor %}
+</div>
+<p class="muted">Health never changes a decision. It tells the person running the replay where the inventory or the follow-through is thin.</p>
+</section>
+
 <p class="muted" style="margin-top:32px">Facts come from CISA and the inventory. Estimates are PatchSignal's own matching and mapping and are labeled as such. An estimate never lowers urgency on its own. Versions are never assumed. Decision vocabulary: SSVC v2, SEI/CERT, Carnegie Mellon University.</p>
 </main>
 <script id="data" type="application/json">{{ client_data|safe }}</script>
@@ -192,10 +238,36 @@ textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospac
 
   function showTab(name){
     $$('.tab').forEach(x => x.classList.toggle('on', x.dataset.tab === name));
-    document.getElementById('tab-notices').hidden = name !== 'notices';
-    document.getElementById('tab-policy').hidden = name !== 'policy';
+    ['notices','policy','health'].forEach(t => { document.getElementById('tab-' + t).hidden = name !== t; });
+    try { history.replaceState(null, '', '#' + name); } catch (e) {}
   }
   $$('.tab').forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
+  if (['#policy', '#health'].includes(location.hash)) showTab(location.hash.slice(1));
+
+  // ---- theme: follows the system until the person picks one; the pick is remembered in this browser.
+  const root = document.documentElement, themeBtn = document.getElementById('theme');
+  const isDark = () => root.getAttribute('data-theme') === 'dark' || (!root.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
+  function paintTheme(){ const d = isDark(); themeBtn.querySelector('[data-sun]').toggleAttribute('hidden', !d); themeBtn.querySelector('[data-moon]').toggleAttribute('hidden', d); themeBtn.querySelector('[data-theme-word]').textContent = d ? 'Light' : 'Dark'; }
+  themeBtn.addEventListener('click', () => { const next = isDark() ? 'light' : 'dark'; root.setAttribute('data-theme', next); try { localStorage.setItem('ps-theme', next); } catch (e) {} paintTheme(); });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paintTheme); paintTheme();
+
+  // ---- share: the system share sheet where there is one, otherwise the summary and address go to the clipboard.
+  const shareBtn = document.getElementById('share');
+  const flash = (btn, word) => { const span = btn.querySelector('span'), was = span.textContent; span.textContent = word; btn.classList.add('ok'); setTimeout(() => { span.textContent = was; btn.classList.remove('ok'); }, 1800); };
+  shareBtn.addEventListener('click', async () => {
+    const url = /^https?:/.test(location.href) ? location.href.split('#')[0] : '';
+    const text = D.share + (url ? '\n' + url : '');
+    if (navigator.share) { try { await navigator.share({title: document.title, text: D.share, url: url || undefined}); return; } catch (e) { if (e.name === 'AbortError') return; } }
+    try { await navigator.clipboard.writeText(text); flash(shareBtn, 'Copied'); }
+    catch (e) { prompt('Copy this:', text); }
+  });
+  // ---- download: this page, as it is now, as one file. Local state (who acted) is in the browser, not the file.
+  document.getElementById('download').addEventListener('click', () => {
+    const html = '<!doctype html>\n' + document.documentElement.outerHTML;
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([html], {type: 'text/html'}));
+    a.download = 'patchsignal-replay-' + new Date().toISOString().slice(0, 10) + '.html'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    flash(document.getElementById('download'), 'Saved');
+  });
 
   function because(leaf){
     const v = leaf.split('|');
