@@ -9,6 +9,8 @@ A Health tab says whether the inventory is good enough to route on.
 
 This is a proof of concept. It runs locally, needs no accounts, and touches no production systems.
 
+**Live demo:** [patchowner.com](https://patchowner.com) is the report for `examples/inventory.csv`, no install needed.
+
 > ⚠️ **For educational and testing purposes only.** Recommendations shown are not professional security advice.
 > For vulnerabilities on the CISA KEV catalog, the default action is immediate patching per CISA guidance.
 > Always verify against vendor advisories and consult your security team before deferring any update.
