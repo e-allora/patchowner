@@ -3,6 +3,7 @@ name = "patchsignal"
 version = "0.1.0"
 description = "Only verified, relevant, actionable vulnerability notices, routed to the person who can act."
 readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.12"
 dependencies = [
     "rapidfuzz>=3.9",

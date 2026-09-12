@@ -147,4 +147,7 @@ docs/                     the SSVC v2 paper and screenshots
 
 ## License
 
-MIT. See `LICENSE`.
+Business Source License 1.1. Free to read, run, modify, and use inside your own organization, for evaluation,
+research, and non-production use. Not free to offer as a competing product or hosted service. Each version
+converts to Apache 2.0 four years after release (Change Date 2030-09-11 for this one). See `LICENSE`, or ask
+for a commercial license.
