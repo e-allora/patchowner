@@ -1,10 +1,10 @@
 from datetime import date
 
-from patchsignal.decide import ACT_NOW, DEFER, PLAN_UPDATE, UPDATE_SOON, WATCH, decide, summarize
-from patchsignal.inventory import Asset
-from patchsignal.kev import Advisory
-from patchsignal.matching import Match
-from patchsignal.ssvc import Policy
+from patchowner.decide import ACT_NOW, DEFER, PLAN_UPDATE, UPDATE_SOON, WATCH, decide, summarize
+from patchowner.inventory import Asset
+from patchowner.kev import Advisory
+from patchowner.matching import Match
+from patchowner.ssvc import Policy
 
 TODAY = date(2026, 9, 9)
 

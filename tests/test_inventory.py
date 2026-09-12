@@ -1,6 +1,6 @@
 import pytest
 
-from patchsignal.inventory import InventoryError, parse_inventory
+from patchowner.inventory import InventoryError, parse_inventory
 
 
 def test_parses_headers_case_and_space_insensitively():

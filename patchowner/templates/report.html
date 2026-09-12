@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PatchSignal replay</title>
+<title>PatchOwner replay</title>
 <style>
 :root{--bg:#f7f7f5;--card:#fff;--soft:#f1f1ee;--ink:#1c1c1a;--muted:#6b6b66;--line:#e4e4df;--now:#b3261e;--soon:#b26a00;--plan:#2b6cb0;--watch:#5f6b7a;--defer:#8a8a84;--ok:#2e7d32;--lit:#fff3c4;--litline:#e0b400;--warnbg:#fff7e6;--warnline:#f1d9a5;--onink:#fff;color-scheme:light}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141412;--card:#1e1e1b;--soft:#2a2a26;--ink:#ecebe6;--muted:#a09f98;--line:#33332f;--now:#e5534b;--soon:#d9962b;--plan:#5b9cf0;--watch:#8d99a8;--defer:#8a8a84;--ok:#5bb663;--lit:#3d3410;--litline:#c9a400;--warnbg:#2e2612;--warnline:#5c4a1a;--onink:#141412;color-scheme:dark}}
@@ -56,6 +56,13 @@ th,td{text-align:left;padding:8px 12px;border-top:1px solid var(--line);font-siz
 .chip{display:inline-block;background:var(--soft);border-radius:999px;padding:1px 9px;font-size:12px;margin:0 4px 4px 0}
 .toggle{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:6px;padding:4px 10px;cursor:pointer;margin:8px 0 0}
 textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospace,monospace;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--card);color:var(--ink)}
+/* disclaimer: sitewide banner, inline cautions, footer */
+.banner{background:var(--warnbg);border:1px solid var(--warnline);border-radius:10px;padding:10px 14px;margin:0 0 18px;font-size:14px;display:flex;gap:10px;align-items:flex-start}
+.banner .ic{flex:none}.banner a{color:var(--ink);font-weight:600;white-space:nowrap}
+.caution{background:var(--warnbg);border:1px solid var(--warnline);border-left:4px solid var(--soon);border-radius:8px;padding:8px 12px;margin:0 0 12px;font-size:14px}
+.caution b{color:var(--soon)}
+.footer{border-top:1px solid var(--line);margin-top:32px;padding-top:14px;font-size:13px;color:var(--muted)}
+.about h2:first-child{margin-top:0}.about p{max-width:72ch}
 /* top bar: title left, share and theme right */
 .top{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}.top>div:first-child{flex:1 1 320px;min-width:0}
 .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -73,10 +80,11 @@ textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospac
 .check .det{grid-column:2/4;font-size:14px}.check .fix{grid-column:2/4;font-size:14px;color:var(--muted)}.check .fix::before{content:"Fix · ";font-weight:600;color:var(--ink)}
 @media (max-width:480px){.top{flex-direction:column}}
 </style>
-<script>try{var t=localStorage.getItem('ps-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<script>try{var t=localStorage.getItem('po-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 </head><body><main>
+<div class="banner" role="note"><span class="ic">⚠️</span><span>{{ banner }} <a href="#about" data-goto="about">Read the full notice</a></span></div>
 <div class="top"><div>
-<h1>What PatchSignal would have told you</h1>
+<h1>What PatchOwner would have told you</h1>
 <p class="sub">Replay of the CISA Known Exploited Vulnerabilities catalog (version {{ s.catalog_version }}) over the last {{ s.days }} days against <b>{{ inventory_name }}</b> ({{ s.assets }} assets).</p>
 </div><div class="tools">
 <button class="tool" id="share" title="Copy a one-paragraph summary and this page's address"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg><span>Share</span></button>
@@ -84,7 +92,7 @@ textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospac
 <button class="tool" id="theme" title="Switch between light and dark" aria-label="Switch theme"><svg viewBox="0 0 24 24" aria-hidden="true" data-sun><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg viewBox="0 0 24 24" aria-hidden="true" data-moon hidden><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><span data-theme-word>Dark</span></button>
 </div></div>
 
-<div class="tabs"><button class="tab on" data-tab="notices">Notices</button><button class="tab" data-tab="policy">Policy</button><button class="tab" data-tab="health">Health{% if health.issues %} <span class="n hot" style="font-size:11px;padding:0 7px;margin-left:2px;border-radius:999px;background:var(--{{ 'now' if health.grade == 'bad' else 'soon' }});color:#fff">{{ health.issues }}</span>{% endif %}</button></div>
+<div class="tabs"><button class="tab on" data-tab="notices">Notices</button><button class="tab" data-tab="policy">Policy</button><button class="tab" data-tab="about">About</button><button class="tab" data-tab="health">Health{% if health.issues %} <span class="n hot" style="font-size:11px;padding:0 7px;margin-left:2px;border-radius:999px;background:var(--{{ 'now' if health.grade == 'bad' else 'soon' }});color:#fff">{{ health.issues }}</span>{% endif %}</button></div>
 
 <section id="tab-notices">
 <div class="stats">
@@ -112,6 +120,7 @@ textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospac
   <span class="tag {{ klass[d.urgency] }}" data-badge>{{ d.urgency }}</span><span class="muted">to {{ d.fixers|map(attribute='name')|join(' and ') }}{% if d.recipient_is_fallback %} (no owner on file){% endif %}{% if d.accountable %} · status to {{ d.accountable.name }}{% endif %}{% if d.escalation %} · {{ d.escalation.name }} hears only if unresolved after {{ d.delivery.escalate_after }}{% endif %}</span>
   <h3>{{ d.headline }}</h3>
   <p class="because"><span data-because>{{ d.plain_reason }}</span>{% if d.assessment %}<a href="#" data-show-path>Show me in the policy</a>{% endif %}</p>
+  <p class="caution" data-caution {% if d.outcome not in slow %}hidden{% endif %}><b>⚠️</b> {% if d.outcome in slow %}{{ caution(slow[d.outcome]) }}{% endif %}</p>
   {% for q in d.questions %}<div class="ask"><span>Question for a person: {{ q }}</span><button data-flip>Yes, it needs a person</button></div>{% endfor %}
   <dl>
     <dt>What is affected</dt><dd>{{ adv.vendor }} {{ adv.product }}{% if a.version %} <span class="muted">(you run {{ a.product }} {{ a.version }})</span>{% endif %}</dd>
@@ -161,7 +170,8 @@ textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospac
 
 <h2>Why was this not sent?</h2>
 {% if not suppressed %}<p class="empty">Nothing was suppressed.</p>{% endif %}
-{% for d in suppressed %}<div class="card"><b>{{ d.match.advisory.cve_id }}</b> on {{ d.match.asset.asset }} was not sent because {{ d.suppressed_reason }}</div>{% endfor %}
+{% for d in suppressed %}<div class="card {{ 'defer' if d.outcome == 'defer' else '' }}"><b>{{ d.match.advisory.cve_id }}</b> on {{ d.match.asset.asset }} was not sent because {{ d.suppressed_reason }}
+{% if d.outcome in slow %}<p class="caution" style="margin:10px 0 0"><b>⚠️</b> {{ caution(slow[d.outcome]) }}</p>{% endif %}</div>{% endfor %}
 </section>
 
 <section id="tab-policy" hidden>
@@ -169,6 +179,7 @@ textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospac
 <div class="stats">
   {% for o in outcomes %}<div class="stat"><b data-total="{{ o }}">0</b><span>{{ outcome_words[o] }}</span></div>{% endfor %}
 </div>
+<p class="caution"><b>⚠️ Defer and Plan update are simulated answers</b> for testing the prioritization logic. Every vulnerability in this replay is actively exploited, and CISA's guidance is to patch immediately. A policy that defers one is yours to defend, not CISA's and not this tool's.</p>
 <p class="sub">To change the policy, change an answer below. Three questions, in order, then an answer. Everything on this page recomputes. The wording is the SEI/CERT SSVC deployer tree underneath, so an auditor can trace every decision.</p>
 <div class="tree" id="tree">
   {% for ex in tree %}
@@ -196,11 +207,11 @@ textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospac
 <h2>What each answer means for people</h2>
 <p class="muted">The tree ends in an answer. This table is what the answer does. It is the other half of the policy, and it is four rows.</p>
 <table><tr><th>Answer</th><th>Who gets the full notice</th><th>Acknowledge within</th><th>Plan within</th><th>Escalate after</th><th>Digest allowed</th></tr>
-{% for o, dl in delivery.items() %}<tr><td><span class="tag {{ outcome_klass[o] }}">{{ outcome_words[o] }}</span></td><td>{{ 'owner and on-call' if dl.notify_oncall else ('nobody; listed under “why was this not sent”' if o == 'defer' else 'owner') }}</td><td>{{ dl.acknowledge_within or '–' }}</td><td>{{ dl.plan_within or '–' }}</td><td>{{ dl.escalate_after or '–' }}</td><td>{{ 'yes' if dl.digest_allowed else 'no' }}</td></tr>{% endfor %}
+{% for o, dl in delivery.items() %}<tr><td><span class="tag {{ outcome_klass[o] }}">{{ outcome_words[o] }}</span>{% if o in slow %} <span class="muted" title="Simulated: for testing the prioritization logic only">⚠️ simulated</span>{% endif %}</td><td>{{ 'owner and on-call' if dl.notify_oncall else ('nobody; listed under “why was this not sent”' if o == 'defer' else 'owner') }}</td><td>{{ dl.acknowledge_within or '–' }}</td><td>{{ dl.plan_within or '–' }}</td><td>{{ dl.escalate_after or '–' }}</td><td>{{ 'yes' if dl.digest_allowed else 'no' }}</td></tr>{% endfor %}
 </table>
 <p class="muted" style="margin-top:8px">Every answer also sends one status line to the accountable person on the asset, if there is one. Escalation contacts hear nothing unless the window passes.</p>
 <h2>Your edited policy file</h2>
-<p class="muted">Copy this into a file and run <code>patchsignal replay --policy yourfile.csv</code>. Unchanged until you edit an answer.</p>
+<p class="muted">Copy this into a file and run <code>patchowner replay --policy yourfile.csv</code>. Unchanged until you edit an answer.</p>
 <textarea id="policy-csv" readonly></textarea>
 </section>
 
@@ -213,7 +224,7 @@ textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospac
   <div class="stat"><b>{{ health.unhandled_urgent }}</b><span>urgent, nobody has acted</span></div>
   <div class="stat"><b>{{ health.handled }}</b><span>handled: fixed or does not apply</span></div>
 </div>
-<p class="sub">Can PatchSignal route a notice for every asset, is the catalog current, and is anyone acting on what was sent? Each line is what good looks like, how many rows meet it, and the one thing to do.</p>
+<p class="sub">Can PatchOwner route a notice for every asset, is the catalog current, and is anyone acting on what was sent? Each line is what good looks like, how many rows meet it, and the one thing to do.</p>
 <div class="checks">
 {% for c in health.checks %}<div class="check">
   <span class="dot h-{{ c.status }}"></span><span class="lbl">{{ c.label }}</span><span class="cnt">{% if c.total %}{{ c.ok }} of {{ c.total }}{% endif %}</span>
@@ -224,7 +235,22 @@ textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospac
 <p class="muted">Health never changes a decision. It tells the person running the replay where the inventory or the follow-through is thin.</p>
 </section>
 
-<p class="muted" style="margin-top:32px">Facts come from CISA and the inventory. Estimates are PatchSignal's own matching and mapping and are labeled as such. An estimate never lowers urgency on its own. Versions are never assumed. Decision vocabulary: SSVC v2, SEI/CERT, Carnegie Mellon University.</p>
+<section id="tab-about" class="about" hidden>
+<h2>What this is</h2>
+<p>PatchOwner is a proof of concept. It replays the CISA Known Exploited Vulnerabilities catalog against a list of technology you run and shows which notices would have gone to whom, which stayed quiet, and why. It exists to test one idea: that fewer, owned, plainly worded notices get acted on, and floods do not.</p>
+<h2>Read this before you rely on anything here</h2>
+<p class="caution"><b>⚠️</b> {{ sitewide }}</p>
+<p>Every vulnerability in this report is on the KEV catalog, which means it is being exploited in the wild right now. The urgency shown on each notice comes from a policy table that you can edit on the Policy tab. When that table says <b>Defer</b> or <b>Plan update</b>, the notice says so with a caution, because that answer is the organization's risk appetite and not CISA's guidance, not the vendor's, and not this tool's. The default table is the SEI/CERT SSVC example, used unchanged so that teams can compare; it is a worked example from a research paper, not a recommendation.</p>
+<h2>What is fact and what is estimate</h2>
+<p>Facts come from CISA (that a vulnerability is exploited, the vendor and product named, the required action) and from your inventory (what you run, who owns it, whether it is reachable from the internet). Estimates are PatchOwner's own: whether an advisory matches an inventory row, and whether an attack can run without a person. Every estimate is labeled under "For the auditor" on each notice, and an estimate never lowers urgency on its own. Versions are never assumed: KEV carries no version data, so no notice claims a version is affected.</p>
+<h2>What people did</h2>
+<p>The buttons on each notice record what a person did. In the hosted demo that goes to a small file on the server; in a downloaded report it stays in your browser. Nothing here sends email, opens tickets, or contacts anyone.</p>
+<h2>Credits</h2>
+<p>Idea, doctrine, and product direction: e-allora. Implementation: written with Claude (Anthropic), Claude Fable 5.1, in Claude Code, September 2026. Decision vocabulary: SSVC version 2.0, Software Engineering Institute, Carnegie Mellon University (Spring et al., April 2021). Exploited-vulnerability data: <a href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog" target="_blank" rel="noopener">CISA Known Exploited Vulnerabilities catalog</a>. Licensed under the Business Source License 1.1.</p>
+</section>
+
+<p class="footer">⚠️ {{ sitewide }}</p>
+<p class="muted" style="margin-top:12px">Facts come from CISA and the inventory. Estimates are PatchOwner's own matching and mapping and are labeled as such. An estimate never lowers urgency on its own. Versions are never assumed. Decision vocabulary: SSVC v2, SEI/CERT, Carnegie Mellon University.</p>
 </main>
 <script id="data" type="application/json">{{ client_data|safe }}</script>
 <script>
@@ -238,17 +264,18 @@ textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospac
 
   function showTab(name){
     $$('.tab').forEach(x => x.classList.toggle('on', x.dataset.tab === name));
-    ['notices','policy','health'].forEach(t => { document.getElementById('tab-' + t).hidden = name !== t; });
+    ['notices','policy','about','health'].forEach(t => { document.getElementById('tab-' + t).hidden = name !== t; });
     try { history.replaceState(null, '', '#' + name); } catch (e) {}
   }
   $$('.tab').forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
-  if (['#policy', '#health'].includes(location.hash)) showTab(location.hash.slice(1));
+  if (['#policy', '#health', '#about'].includes(location.hash)) showTab(location.hash.slice(1));
+  $$('[data-goto]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); showTab(a.dataset.goto); window.scrollTo({top: 0, behavior: 'smooth'}); }));
 
   // ---- theme: follows the system until the person picks one; the pick is remembered in this browser.
   const root = document.documentElement, themeBtn = document.getElementById('theme');
   const isDark = () => root.getAttribute('data-theme') === 'dark' || (!root.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
   function paintTheme(){ const d = isDark(); themeBtn.querySelector('[data-sun]').toggleAttribute('hidden', !d); themeBtn.querySelector('[data-moon]').toggleAttribute('hidden', d); themeBtn.querySelector('[data-theme-word]').textContent = d ? 'Light' : 'Dark'; }
-  themeBtn.addEventListener('click', () => { const next = isDark() ? 'light' : 'dark'; root.setAttribute('data-theme', next); try { localStorage.setItem('ps-theme', next); } catch (e) {} paintTheme(); });
+  themeBtn.addEventListener('click', () => { const next = isDark() ? 'light' : 'dark'; root.setAttribute('data-theme', next); try { localStorage.setItem('po-theme', next); } catch (e) {} paintTheme(); });
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paintTheme); paintTheme();
 
   // ---- share: the system share sheet where there is one, otherwise the summary and address go to the clipboard.
@@ -265,7 +292,7 @@ textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospac
   document.getElementById('download').addEventListener('click', () => {
     const html = '<!doctype html>\n' + document.documentElement.outerHTML;
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([html], {type: 'text/html'}));
-    a.download = 'patchsignal-replay-' + new Date().toISOString().slice(0, 10) + '.html'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    a.download = 'patchowner-replay-' + new Date().toISOString().slice(0, 10) + '.html'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     flash(document.getElementById('download'), 'Saved');
   });
 
@@ -310,13 +337,14 @@ textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospac
       card.dataset.leaf = n.leaf; card.className = 'card ' + D.klass[o] + (card.classList.contains('lit') ? ' lit' : '');
       card.querySelector('[data-badge]').textContent = D.words[o]; card.querySelector('[data-badge]').className = 'tag ' + D.klass[o];
       const b = card.querySelector('[data-because]'); if (b) b.textContent = D.words[o] + ', because ' + because(n.leaf) + '.';
+      const c = card.querySelector('[data-caution]'); if (c) { c.hidden = !D.slow[o]; if (D.slow[o]) c.innerHTML = '<b>⚠️</b> ' + D.cautions[o]; }
     });
     // tree leaves, fans, branch counts
     $$('.leaf').forEach(leaf => {
       const k = leaf.dataset.leaf, c = counts[k] || 0;
       leaf.classList.toggle('zero', !c);
       leaf.querySelector('[data-count]').textContent = c; leaf.querySelector('[data-count]').classList.toggle('hot', !!c);
-      leaf.querySelector('.std').textContent = outcomeOf[k];
+      leaf.querySelector('.std').textContent = (D.slow[outcomeOf[k]] ? '⚠️ simulated · ' : '') + outcomeOf[k];
       const fan = document.querySelector('[data-fan="'+k+'"]'); fan.innerHTML = '';
       D.notices.filter(n => n.leaf === k).forEach(n => { const li = document.createElement('li'); li.className = n.sent ? '' : 'sup'; li.dataset.id = n.id;
         li.innerHTML = '<span class="tag '+D.klass[outcomeOf[k]]+'">'+D.words[outcomeOf[k]]+'</span>'+n.cve+' on '+n.asset+' → '+n.to+(n.sent?'':' (suppressed)'); fan.appendChild(li); });
@@ -349,8 +377,8 @@ textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospac
   D.notices.forEach(n => n.origLeaf = n.leaf);
 
   // ---- buttons: what a person did. Tries the server; falls back to this browser's storage for the static report.
-  let who = ''; try { who = localStorage.getItem('ps-who') || ''; } catch (e) {}
-  const localState = (() => { try { return JSON.parse(localStorage.getItem('ps-state') || '{}'); } catch (e) { return {}; } })();
+  let who = ''; try { who = localStorage.getItem('po-who') || ''; } catch (e) {}
+  const localState = (() => { try { return JSON.parse(localStorage.getItem('po-state') || '{}'); } catch (e) { return {}; } })();
   function sentence(st){ if (!st) return ''; if (st.sentence) return st.sentence;
     if (st.action === 'assigned') return 'Assigned to ' + (st.note || 'someone') + ' by ' + st.by + '.';
     if (st.action === 'not_applicable') return st.by + ' said this does not apply' + (st.note ? ': ' + st.note + '.' : '.');
@@ -369,7 +397,7 @@ textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospac
   $$('.card[data-id]').forEach(card => { const n = byId[card.dataset.id]; if (n && localState[n.key] && !n.state) n.state = localState[n.key]; if (n && n.state) paintState(card, n.state); });
   $$('[data-action]').forEach(btn => btn.addEventListener('click', async () => {
     const card = btn.closest('.card'), n = byId[card.dataset.id], action = btn.dataset.action; if (!n) return;
-    if (!who) { who = prompt('Your name, once:') || ''; try { localStorage.setItem('ps-who', who); } catch (e) {} if (!who) return; }
+    if (!who) { who = prompt('Your name, once:') || ''; try { localStorage.setItem('po-who', who); } catch (e) {} if (!who) return; }
     let note = '';
     if (action === 'assigned') { note = prompt('Assign to whom?') || ''; if (!note) return; }
     if (action === 'not_applicable') { note = prompt('Why does it not apply? (product not used, version not affected, already patched, isolated…)') || ''; if (!note) return; }
@@ -377,7 +405,7 @@ textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospac
     try {
       const res = await fetch('/act', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key: n.key, action, by: who, note})});
       if (res.ok) st = (await res.json()).state; else throw new Error('server said no');
-    } catch (e) { localState[n.key] = st; try { localStorage.setItem('ps-state', JSON.stringify(localState)); } catch (e2) {} }
+    } catch (e) { localState[n.key] = st; try { localStorage.setItem('po-state', JSON.stringify(localState)); } catch (e2) {} }
     n.state = st; paintState(card, st);
   }));
   document.getElementById('show-all').addEventListener('click', e => { const t = document.getElementById('tree'); t.classList.toggle('all'); e.target.textContent = t.classList.contains('all') ? 'Hide the branches nothing landed on' : 'Show the branches nothing landed on'; });

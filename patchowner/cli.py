@@ -1,4 +1,4 @@
-"""Command line: `patchsignal replay inventory.csv` and `patchsignal serve`."""
+"""Command line: `patchowner replay inventory.csv` and `patchowner serve`."""
 from __future__ import annotations
 
 import argparse
@@ -7,6 +7,7 @@ from pathlib import Path
 
 from .engine import run_replay
 from .inventory import InventoryError
+from .report import BANNER
 from .ssvc import Policy, PolicyError
 from .state import StateStore
 
@@ -40,6 +41,7 @@ def _replay(args: argparse.Namespace) -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(r.html)
     print(f"Report written to {out}")
+    print(f"Note: {BANNER}")
     return 0
 
 
@@ -54,7 +56,7 @@ def _serve(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="patchsignal", description=__doc__)
+    p = argparse.ArgumentParser(prog="patchowner", description=__doc__)
     sub = p.add_subparsers(dest="cmd", required=True)
 
     r = sub.add_parser("replay", help="replay the KEV catalog against an inventory CSV and write an HTML report")

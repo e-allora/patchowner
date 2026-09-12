@@ -15,6 +15,19 @@ _env = Environment(
     loader=FileSystemLoader(Path(__file__).parent / "templates"),
     autoescape=select_autoescape(["html"]),
 )
+SITEWIDE = ("This site is for educational and testing purposes only. Recommendations shown here are not professional security advice. "
+            "For vulnerabilities on the CISA KEV catalog, the default action is immediate patching per CISA guidance. "
+            "Always verify against vendor advisories and consult your security team before deferring any update.")
+BANNER = ("Demo for testing the prioritization logic only. Not security advice. Every vulnerability here is actively exploited, "
+          "and CISA's guidance is to patch immediately.")
+SLOW = {"defer": "Defer", "scheduled": "Plan update"}   # answers that slow-walk an exploited vulnerability; each carries a caution
+
+
+def caution(word: str) -> str:
+    return (f"Simulated recommendation: {word}, for testing the prioritization logic only. This vulnerability is actively exploited "
+            f"(CISA KEV). \u201c{word}\u201d here does not reflect CISA or vendor guidance. In a real environment, apply the patch immediately.")
+
+
 KLASS = {ACT_NOW: "now", UPDATE_SOON: "soon", PLAN_UPDATE: "plan", WATCH: "watch", "Defer": "defer"}
 OUTCOME_KLASS = {"immediate": "now", "out-of-cycle": "soon", "scheduled": "plan", "defer": "defer"}
 
@@ -56,7 +69,7 @@ def _client_data(policy: Policy, decisions: list[Decision], share: str) -> str:
     rows = [{"row": row, "values": list(values), "outcome": outcome} for values, (outcome, row) in policy.rows.items()]
     return json.dumps({
         "notices": notices, "rows": rows, "header": policy.header,
-        "share": share,
+        "share": share, "slow": SLOW, "cautions": {o: caution(w) for o, w in SLOW.items()},
         "words": OUTCOME_TO_URGENCY, "klass": OUTCOME_KLASS, "outcomes": list(OUTCOMES),
         "delivery": {o: {"ack": dl.acknowledge_within, "plan": dl.plan_within, "esc": dl.escalate_after, "oncall": dl.notify_oncall} for o, dl in DELIVERY.items()},
         "points": [{"name": pt.name, "question": pt.question, "values": list(pt.values), "plain": pt.plain, "clause": pt.clause} for pt in POINTS],
@@ -66,10 +79,11 @@ def _client_data(policy: Policy, decisions: list[Decision], share: str) -> str:
 def share_text(s: Summary, health: Health, inventory_name: str) -> str:
     """The plain-text summary the Share button copies: what a person would paste into a chat."""
     urgent = s.by_urgency.get(ACT_NOW, 0)
-    return (f"PatchSignal replay: KEV catalog {s.catalog_version}, last {s.days} days, against {inventory_name} ({s.assets} assets). "
+    return (f"PatchOwner replay: KEV catalog {s.catalog_version}, last {s.days} days, against {inventory_name} ({s.assets} assets). "
             f"{s.advisories_in_window} advisories published, {s.relevant_advisories} touched something we own, "
             f"{s.sent} notices sent ({urgent} Act now), {s.suppressed} suppressed with a reason. "
-            f"Health: {health.word}" + (f", {health.issues} thing{'s' if health.issues != 1 else ''} to fix." if health.issues else "."))
+            f"Health: {health.word}" + (f", {health.issues} thing{'s' if health.issues != 1 else ''} to fix." if health.issues else ".")
+            + " Demo only, not security advice.")
 
 
 def render_html(summary: Summary, decisions: list[Decision], policy: Policy, health: Health, *, inventory_name: str) -> str:
@@ -85,5 +99,6 @@ def render_html(summary: Summary, decisions: list[Decision], policy: Policy, hea
         plain_lines=plain_policy(policy),
         delivery=DELIVERY,
         outcome_words=OUTCOME_WORDS,
+        sitewide=SITEWIDE, banner=BANNER, slow=SLOW, caution=caution,
         client_data=_client_data(policy, decisions, share_text(summary, health, inventory_name)),
     )

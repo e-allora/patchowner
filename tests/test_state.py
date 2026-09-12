@@ -2,11 +2,11 @@ from datetime import date, datetime, timezone
 
 import pytest
 
-from patchsignal.decide import decide, summarize
-from patchsignal.inventory import Asset
-from patchsignal.kev import Advisory
-from patchsignal.matching import Match
-from patchsignal.state import StateStore, notice_key
+from patchowner.decide import decide, summarize
+from patchowner.inventory import Asset
+from patchowner.kev import Advisory
+from patchowner.matching import Match
+from patchowner.state import StateStore, notice_key
 
 TODAY = date(2026, 9, 10)
 
@@ -77,7 +77,7 @@ def test_summary_counts_states(tmp_path):
 def test_web_act_endpoint_records_and_rejects(tmp_path):
     from fastapi.testclient import TestClient
 
-    from patchsignal import web
+    from patchowner import web
     web.configure(tmp_path / "state.json")
     c = TestClient(web.app)
     r = c.post("/act", json={"key": "CVE-2026-1|VPN", "action": "acknowledged", "by": "Dana"})

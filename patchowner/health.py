@@ -1,4 +1,4 @@
-"""Health: can PatchSignal actually route a notice for every asset, and is anyone acting on what was sent?
+"""Health: can PatchOwner actually route a notice for every asset, and is anyone acting on what was sent?
 
 Every check is a plain sentence, a count, and the one thing to do about it. Nothing here changes a decision;
 it tells the person running the replay where the inventory or the follow-through is thin.
@@ -102,7 +102,7 @@ def assess_health(assets: list[Asset], decisions: list[Decision], summary: Summa
     checks.append(Check("Versions recorded", len(active) - len(no_version), len(active),
                         GOOD if not no_version else WARN,
                         "All of them." if not no_version else f"No version on {_names(no_version)}.",
-                        "" if no_version == [] else "Add version. KEV carries no version data, so PatchSignal never claims one is affected; the owner still needs it to check.",
+                        "" if no_version == [] else "Add version. KEV carries no version data, so PatchOwner never claims one is affected; the owner still needs it to check.",
                         [a.asset for a in no_version]))
 
     # 3. Exceptions: expired ones silently stop suppressing; ones ending soon deserve a look.

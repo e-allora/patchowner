@@ -69,7 +69,7 @@ class Step:
     point: DecisionPoint
     value: str
     reason: str
-    fact: bool  # True: taken from a source or the inventory. False: PatchSignal's own estimate.
+    fact: bool  # True: taken from a source or the inventory. False: PatchOwner's own estimate.
     question: str | None = None  # something a person should confirm; an estimate never lowers urgency on its own
 
 

@@ -2,9 +2,9 @@ from datetime import date
 
 import pytest
 
-from patchsignal.inventory import Asset
-from patchsignal.kev import Advisory
-from patchsignal.matching import match_one, normalize
+from patchowner.inventory import Asset
+from patchowner.kev import Advisory
+from patchowner.matching import match_one, normalize
 
 
 def adv(vendor, product):

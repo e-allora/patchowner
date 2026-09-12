@@ -1,14 +1,14 @@
-"""The five routing scenarios from the PatchSignal doc, as written.
+"""The five routing scenarios from the PatchOwner doc, as written.
 
 Principle: send the detailed alert to the person who can fix it, a concise status to the person
 accountable for it, and an escalation only to the person who can remove a blocker.
 """
 from datetime import date
 
-from patchsignal.decide import ACT_NOW, UPDATE_SOON, decide
-from patchsignal.inventory import Asset
-from patchsignal.kev import Advisory
-from patchsignal.matching import Match
+from patchowner.decide import ACT_NOW, UPDATE_SOON, decide
+from patchowner.inventory import Asset
+from patchowner.kev import Advisory
+from patchowner.matching import Match
 
 TODAY = date(2026, 9, 10)
 
@@ -90,7 +90,7 @@ def test_no_owner_means_fallback_fixes_and_nobody_is_accountable_or_escalated():
 
 
 def test_accountable_gets_one_status_line_per_asset_not_per_advisory():
-    from patchsignal.decide import summarize
+    from patchowner.decide import summarize
     a = Asset(asset="VPN", vendor="Fortinet", product="FortiOS", internet_exposed=True, criticality="high",
               owner_email="netops@x", accountable="marco@x")
     ds = decide([Match(adv("Fortinet", "FortiOS"), a, "exact", 100, "r"), Match(adv("Fortinet", "FortiOS"), a, "exact", 100, "r")],

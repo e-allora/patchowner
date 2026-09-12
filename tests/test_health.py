@@ -1,12 +1,12 @@
 """Health: routing coverage, exceptions, feed freshness, follow-through. No feed needed."""
 from datetime import date, timedelta
 
-from patchsignal.decide import ACT_NOW, Delivery, Decision, Recipient, summarize
-from patchsignal.health import BAD, GOOD, WARN, assess_health, feed_date_from_version
-from patchsignal.inventory import parse_inventory
-from patchsignal.kev import Advisory
-from patchsignal.matching import Match
-from patchsignal.state import Action
+from patchowner.decide import ACT_NOW, Delivery, Decision, Recipient, summarize
+from patchowner.health import BAD, GOOD, WARN, assess_health, feed_date_from_version
+from patchowner.inventory import parse_inventory
+from patchowner.kev import Advisory
+from patchowner.matching import Match
+from patchowner.state import Action
 
 TODAY = date(2026, 9, 11)
 FULL = "asset,vendor,product,version,internet_exposed,owner_email,accountable,oncall,escalate_to,status,exception_until\n"

@@ -1,13 +1,19 @@
-# PatchSignal
+# PatchOwner
 
 **Only verified, relevant, actionable vulnerability notices, routed to the person who can act.**
 
-Upload a list of the technology you run. PatchSignal replays the CISA Known Exploited Vulnerabilities (KEV)
+Upload a list of the technology you run. PatchOwner replays the CISA Known Exploited Vulnerabilities (KEV)
 catalog over the last 90 days and shows exactly which notices would have gone to whom, which stayed quiet,
 and why. The decision is an SSVC deployer tree you can edit by clicking. Every notice has working buttons.
 A Health tab says whether the inventory is good enough to route on.
 
 This is a proof of concept. It runs locally, needs no accounts, and touches no production systems.
+
+> ⚠️ **For educational and testing purposes only.** Recommendations shown are not professional security advice.
+> For vulnerabilities on the CISA KEV catalog, the default action is immediate patching per CISA guidance.
+> Always verify against vendor advisories and consult your security team before deferring any update.
+> Where the policy answers **Defer** or **Plan update**, the report says so inline, labeled as a simulated
+> recommendation for testing the prioritization logic. The full notice is on the report's About tab.
 
 | Notices, most urgent first | Health: can every asset be routed? |
 |---|---|
@@ -17,14 +23,20 @@ Dark mode follows the system and can be pinned with the button in the top right.
 
 ![Health tab, dark](docs/screenshots/dark-health.png)
 
+When the policy answers Defer or Plan update, the notice carries the caution inline. The About tab holds the full notice.
+
+| Inline caution on a slow answer | About tab |
+|---|---|
+| ![Inline caution](docs/screenshots/caution.png) | ![About tab](docs/screenshots/about.png) |
+
 ## Run it
 
 ```
 uv sync
-uv run patchsignal replay examples/inventory.csv        # writes out/report.html, open it in a browser
-uv run patchsignal serve                                # http://127.0.0.1:8000, upload a CSV
+uv run patchowner replay examples/inventory.csv        # writes out/report.html, open it in a browser
+uv run patchowner serve                                # http://127.0.0.1:8000, upload a CSV
 uv run pytest                                           # 86 tests, including the five routing scenarios from the design doc
-uv run patchsignal replay examples/inventory.csv --policy my_policy.csv   # your own risk appetite
+uv run patchowner replay examples/inventory.csv --policy my_policy.csv   # your own risk appetite
 ```
 
 The KEV feed is downloaded once to `data/kev.json`. Add `--refresh` to re-download.
@@ -32,7 +44,7 @@ Needs Python 3.12 or newer and [uv](https://docs.astral.sh/uv/).
 
 ## What is in the report
 
-Three tabs, one page, no server needed once it is written.
+Four tabs, one page, no server needed once it is written.
 
 **Notices.** Every notice that would have been sent, most urgent first. Each card says who gets it, one
 plain sentence for why, what is affected, where, when, and what to do. Five buttons: open the official fix,
@@ -43,7 +55,7 @@ what the accountable people see (one status line, no CVE numbers), and every sup
 every branch. Change an answer and every card, badge, and sentence recomputes. The edited policy CSV appears at
 the bottom, ready for `--policy`.
 
-**Health.** Can PatchSignal route a notice for every asset, is the catalog current, and is anyone acting on
+**Health.** Can PatchOwner route a notice for every asset, is the catalog current, and is anyone acting on
 what was sent? Eleven checks, worst first, each with a count and the one thing to do:
 
 - owner, accountable person, on-call contact (internet-facing assets), and escalation contact on every active asset
@@ -53,6 +65,8 @@ what was sent? Eleven checks, worst first, each with a count and the one thing t
 - someone has acted on every Act now and Update soon notice, nobody over their notice budget
 
 Health never changes a decision. It tells the person running the replay where the inventory or the follow-through is thin.
+
+**About.** What the tool is, the full disclaimer, what is fact and what is estimate, credits, license.
 
 **Share, Download, theme.** Share copies a one-paragraph summary (and the page address, when there is one) or
 opens the system share sheet on phones. Download saves the report as one HTML file. The theme button switches
@@ -74,7 +88,7 @@ The decision is an SSVC deployer tree: Stakeholder-Specific Vulnerability Catego
 SEI/CERT at Carnegie Mellon (Spring et al., version 2.0, April 2021; the paper is in `docs/`). Four fixed
 questions, in order, then an answer that the organization owns.
 
-| Decision point | Values | Where PatchSignal gets it |
+| Decision point | Values | Where PatchOwner gets it |
 |---|---|---|
 | Exploitation | none, public poc, active | Always `active`: every KEV entry is exploited in the wild. Fact. |
 | System Exposure | small, controlled, open | `exposure` column if set; else `internet_exposed` yes means open, otherwise controlled. |
@@ -83,10 +97,10 @@ questions, in order, then an answer that the organization owns.
 
 The leaf is one of `defer`, `scheduled`, `out-of-cycle`, `immediate`, shown to people as
 Defer, Plan update, Update soon, Act now. The default policy is the SEI example tree, unchanged
-(`patchsignal/policies/deployer_default.csv`, 72 rows). The vocabulary is fixed so teams can compare;
+(`patchowner/policies/deployer_default.csv`, 72 rows). The vocabulary is fixed so teams can compare;
 the outcome on each row is the risk appetite and is meant to be edited.
 
-Then PatchSignal adds what SSVC leaves out:
+Then PatchOwner adds what SSVC leaves out:
 
 1. **Match** the advisory's vendor and product to each inventory row. Tiers: exact, likely, possible.
    KEV has no version data, so no notice ever claims a version is affected. A `possible` match gets no
@@ -119,23 +133,23 @@ Those wait for a paying pilot.
 ## Layout
 
 ```
-patchsignal/kev.py        feed download, cache, date window
-patchsignal/inventory.py  CSV parsing and validation
-patchsignal/matching.py   vendor aliases, normalization, confidence tiers
-patchsignal/ssvc.py       SSVC decision points, policy loading, assessment
-patchsignal/decide.py     outcome to urgency, routing, escalation, suppression, budget
-patchsignal/health.py     inventory coverage, exceptions, feed freshness, follow-through
-patchsignal/state.py      what people did about a notice, JSON file with history
-patchsignal/report.py     HTML rendering (templates/report.html), share text
-patchsignal/engine.py     one call that runs the replay
-patchsignal/cli.py        `patchsignal replay` and `patchsignal serve`
-patchsignal/web.py        upload form and the /act endpoint
+patchowner/kev.py        feed download, cache, date window
+patchowner/inventory.py  CSV parsing and validation
+patchowner/matching.py   vendor aliases, normalization, confidence tiers
+patchowner/ssvc.py       SSVC decision points, policy loading, assessment
+patchowner/decide.py     outcome to urgency, routing, escalation, suppression, budget
+patchowner/health.py     inventory coverage, exceptions, feed freshness, follow-through
+patchowner/state.py      what people did about a notice, JSON file with history
+patchowner/report.py     HTML rendering (templates/report.html), share text
+patchowner/engine.py     one call that runs the replay
+patchowner/cli.py        `patchowner replay` and `patchowner serve`
+patchowner/web.py        upload form and the /act endpoint
 docs/                     the SSVC v2 paper and screenshots
 ```
 
 ## Credits
 
-- **Idea, doctrine, and product direction:** [e-allora](https://github.com/e-allora). The PatchSignal doctrine,
+- **Idea, doctrine, and product direction:** [e-allora](https://github.com/e-allora). The PatchOwner doctrine (the project was called PatchSignal until September 2026),
   the funnel, the routing principle, and the five routing scenarios come from their design document.
 - **Implementation:** written with [Claude](https://claude.ai) (Anthropic), model Claude Fable 5.1, working in
   [Claude Code](https://claude.com/claude-code), September 2026. Claude wrote the code, tests, and this README

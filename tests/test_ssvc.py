@@ -2,9 +2,9 @@ from datetime import date
 
 import pytest
 
-from patchsignal.inventory import Asset
-from patchsignal.kev import Advisory
-from patchsignal.ssvc import AUTOMATABLE, POINTS, Policy, PolicyError, assess, automatable_hint, plain_policy
+from patchowner.inventory import Asset
+from patchowner.kev import Advisory
+from patchowner.ssvc import AUTOMATABLE, POINTS, Policy, PolicyError, assess, automatable_hint, plain_policy
 
 
 def adv(description="Remote code execution over the network."):
