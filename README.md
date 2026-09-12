@@ -151,11 +151,11 @@ docs/                     the SSVC v2 paper and screenshots
 
 ## Credits
 
-- **Idea, doctrine, and product direction:** [e-allora](https://github.com/e-allora). The PatchOwner doctrine (the project was called PatchSignal until September 2026),
+- **Idea, doctrine, and product direction:** Robert Sweetman ([LinkedIn](https://www.linkedin.com/in/robert-sweetman-74602a227/), [GitHub](https://github.com/e-allora)). The PatchOwner doctrine (the project was called PatchSignal until September 2026),
   the funnel, the routing principle, and the five routing scenarios come from their design document.
 - **Implementation:** written with [Claude](https://claude.ai) (Anthropic), model Claude Fable 5.1, working in
   [Claude Code](https://claude.com/claude-code), September 2026. Claude wrote the code, tests, and this README
-  under e-allora's direction and review.
+  under Robert's direction and review.
 - **Decision vocabulary:** SSVC version 2.0, Software Engineering Institute, Carnegie Mellon University
   (Spring, Householder, Hatleback, Manion, Oliver, Sarvapalli, Tyzenhaus, Yarbrough, April 2021).
   Default policy table from the CERT/CC SSVC repository, unchanged.
