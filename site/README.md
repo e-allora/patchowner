@@ -1,4 +1,4 @@
-Static copy of the demo report, served at https://patchowner.com by Vercel.
+Static copy of the demo report, served at https://patchowner.com by Vercel. Every push to main deploys it.
 
 Rebuild it with:
 
