@@ -11,7 +11,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <style>
-:root{--bg:#f7f7f5;--card:#fff;--soft:#f1f1ee;--ink:#1c1c1a;--muted:#6b6b66;--line:#e4e4df;--now:#b3261e;--soon:#b26a00;--plan:#2b6cb0;--watch:#5f6b7a;--defer:#8a8a84;--ok:#2e7d32;--lit:#fff3c4;--litline:#e0b400;--warnbg:#fff7e6;--warnline:#f1d9a5;--onink:#fff;color-scheme:light}
+:root{--accent:#5b3a29;--bg:#f7f7f5;--card:#fff;--soft:#f1f1ee;--ink:#1c1c1a;--muted:#6b6b66;--line:#e4e4df;--now:#b3261e;--soon:#b26a00;--plan:#2b6cb0;--watch:#5f6b7a;--defer:#8a8a84;--ok:#2e7d32;--lit:#fff3c4;--litline:#e0b400;--warnbg:#fff7e6;--warnline:#f1d9a5;--onink:#fff;color-scheme:light}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141412;--card:#1e1e1b;--soft:#2a2a26;--ink:#ecebe6;--muted:#a09f98;--line:#33332f;--now:#e5534b;--soon:#d9962b;--plan:#5b9cf0;--watch:#8d99a8;--defer:#8a8a84;--ok:#5bb663;--lit:#3d3410;--litline:#c9a400;--warnbg:#2e2612;--warnline:#5c4a1a;--onink:#141412;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#141412;--card:#1e1e1b;--soft:#2a2a26;--ink:#ecebe6;--muted:#a09f98;--line:#33332f;--now:#e5534b;--soon:#d9962b;--plan:#5b9cf0;--watch:#8d99a8;--defer:#8a8a84;--ok:#5bb663;--lit:#3d3410;--litline:#c9a400;--warnbg:#2e2612;--warnline:#5c4a1a;--onink:#141412;color-scheme:dark}
 body{margin:0;background:var(--bg);color:var(--ink);transition:background .2s,color .2s;font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px 16px}
@@ -88,11 +88,32 @@ textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospac
 .check .cnt{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px;white-space:nowrap}
 .check .det{grid-column:2/4;font-size:14px}.check .fix{grid-column:2/4;font-size:14px;color:var(--muted)}.check .fix::before{content:"Fix · ";font-weight:600;color:var(--ink)}
 @media (max-width:480px){.top{flex-direction:column}}
+/* landing */
+.landing{margin:0 0 28px;padding:0 0 24px;border-bottom:1px solid var(--line)}
+.landing .eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--accent);margin:0 0 10px}
+.landing h1.hero{font-size:34px;line-height:1.15;margin:0 0 14px;letter-spacing:-.01em;max-width:22ch}
+.landing p.lede{font-size:16px;line-height:1.6;color:var(--ink);max-width:64ch;margin:0 0 14px}
+.landing p.mech{font-size:15px;line-height:1.55;color:var(--muted);max-width:64ch;margin:0 0 18px}
+.landing .down{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--ink);text-decoration:none;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:8px 14px}
+.landing .down:hover{background:var(--soft)}
+.landing .byline{margin:16px 0 0;font-size:13px;color:var(--muted)}
+.landing .byline a{color:var(--muted);text-decoration:underline}
+@media (max-width:520px){.landing h1.hero{font-size:26px}}
 </style>
 <script>try{var t=localStorage.getItem('po-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 </head><body><main>
 <div class="banner" role="note"><span class="ic">⚠️</span><span>{{ banner }} <a href="#about" data-goto="about">Read the full notice</a></span></div>
-<div class="top"><div>
+
+<section class="landing" aria-label="About PatchOwner">
+<p class="eyebrow">FREE · NO ACCOUNT · RUNS IN YOUR BROWSER</p>
+<h1 class="hero">The vulnerability alert written for the person who has to act.</h1>
+<p class="lede">Most security tools were built for the analyst. PatchOwner is built for whoever ends up owning the fix — a security team, an IT lead, or the person at a small company who quietly became &ldquo;the tech one.&rdquo; Every notice is written so the responsible party can act on it, not decode it first. What&rsquo;s affected, where, why it matters, what to do, and who else was told. In sentences.</p>
+<p class="mech">Upload a list of what you run. PatchOwner replays the last 90 days of the CISA Known Exploited Vulnerabilities catalog and shows you exactly which alerts would have reached the right person, which ones stayed quiet, and why.</p>
+<a class="down" href="#report">See the demo report below ↓</a>
+<p class="byline">Built by <a href="https://www.linkedin.com/in/robert-sweetman-74602a227/">Robert Sweetman</a>. Source on <a href="https://github.com/e-allora/patchowner">GitHub</a>.</p>
+</section>
+
+<div id="report" class="top"><div>
 <h1>What PatchOwner would have told you</h1>
 <p class="sub">Replay of the CISA Known Exploited Vulnerabilities catalog (version {{ s.catalog_version }}) over the last {{ s.days }} days against <b>{{ inventory_name }}</b> ({{ s.assets }} assets).</p>
 </div><div class="tools">
@@ -254,8 +275,10 @@ textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospac
 <p>Facts come from CISA (that a vulnerability is exploited, the vendor and product named, the required action) and from your inventory (what you run, who owns it, whether it is reachable from the internet). Estimates are PatchOwner's own: whether an advisory matches an inventory row, and whether an attack can run without a person. Every estimate is labeled under "For the auditor" on each notice, and an estimate never lowers urgency on its own. Versions are never assumed: KEV carries no version data, so no notice claims a version is affected.</p>
 <h2>What people did</h2>
 <p>The buttons on each notice record what a person did. In the hosted demo that goes to a small file on the server; in a downloaded report it stays in your browser. Nothing here sends email, opens tickets, or contacts anyone.</p>
-<h2>Credits</h2>
-<p>Idea, doctrine, and product direction: <a href="https://www.linkedin.com/in/robert-sweetman-74602a227/">Robert Sweetman</a>. Code and instructions to run it on your own inventory: <a href="https://github.com/e-allora/patchowner">github.com/e-allora/patchowner</a>. Implementation: written with Claude (Anthropic), Claude Fable 5.1, in Claude Code, September 2026. Decision vocabulary: SSVC version 2.0, Software Engineering Institute, Carnegie Mellon University (Spring et al., April 2021). Exploited-vulnerability data: <a href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog" target="_blank" rel="noopener">CISA Known Exploited Vulnerabilities catalog</a>. Licensed under the Business Source License 1.1.</p>
+<h2>About the build</h2>
+<p>PatchOwner was built by <a href="https://www.linkedin.com/in/robert-sweetman-74602a227/">Robert Sweetman</a>. The idea, the product direction, the SSVC policy choices, and every decision about how a notice is written are mine. The code was produced in collaboration with <a href="https://claude.com/claude-code" target="_blank" rel="noopener">Claude Code</a>, Anthropic&rsquo;s coding agent, running Claude (Claude Fable 5.1, September 2026). Tests, documentation, and the report template were produced in that same collaboration under my direction.</p>
+<p>Prioritization logic follows the <a href="https://insights.sei.cmu.edu/library/prioritizing-vulnerability-response-a-stakeholder-specific-vulnerability-categorization/" target="_blank" rel="noopener">SEI/CERT SSVC deployer tree (v2.0, Spring et al., April 2021)</a>. Exploited-vulnerability data comes from the <a href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog" target="_blank" rel="noopener">CISA Known Exploited Vulnerabilities catalog</a>. Full source is on <a href="https://github.com/e-allora/patchowner">GitHub</a> under the Business Source License 1.1.</p>
+<p>If PatchOwner is useful, or if something is wrong, <a href="https://github.com/e-allora/patchowner/issues" target="_blank" rel="noopener">open an issue</a> or reach out.</p>
 </section>
 
 <p class="footer">⚠️ {{ sitewide }}</p>
