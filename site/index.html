@@ -11,7 +11,8 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <style>
-:root{--accent:#5b3a29;--bg:#f7f7f5;--card:#fff;--soft:#f1f1ee;--ink:#1c1c1a;--muted:#6b6b66;--line:#e4e4df;--now:#b3261e;--soon:#b26a00;--plan:#2b6cb0;--watch:#5f6b7a;--defer:#8a8a84;--ok:#2e7d32;--lit:#fff3c4;--litline:#e0b400;--warnbg:#fff7e6;--warnline:#f1d9a5;--onink:#fff;color-scheme:light}
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap');
+:root{--accent:#1e3a5f;--bg:#f7f7f5;--card:#fff;--soft:#f1f1ee;--ink:#1c1c1a;--muted:#6b6b66;--line:#e4e4df;--now:#b3261e;--soon:#b26a00;--plan:#2b6cb0;--watch:#5f6b7a;--defer:#8a8a84;--ok:#2e7d32;--lit:#fff3c4;--litline:#e0b400;--warnbg:#fff7e6;--warnline:#f1d9a5;--onink:#fff;color-scheme:light}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141412;--card:#1e1e1b;--soft:#2a2a26;--ink:#ecebe6;--muted:#a09f98;--line:#33332f;--now:#e5534b;--soon:#d9962b;--plan:#5b9cf0;--watch:#8d99a8;--defer:#8a8a84;--ok:#5bb663;--lit:#3d3410;--litline:#c9a400;--warnbg:#2e2612;--warnline:#5c4a1a;--onink:#141412;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#141412;--card:#1e1e1b;--soft:#2a2a26;--ink:#ecebe6;--muted:#a09f98;--line:#33332f;--now:#e5534b;--soon:#d9962b;--plan:#5b9cf0;--watch:#8d99a8;--defer:#8a8a84;--ok:#5bb663;--lit:#3d3410;--litline:#c9a400;--warnbg:#2e2612;--warnline:#5c4a1a;--onink:#141412;color-scheme:dark}
 body{margin:0;background:var(--bg);color:var(--ink);transition:background .2s,color .2s;font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px 16px}
@@ -91,14 +92,14 @@ textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospac
 /* landing */
 .landing{margin:0 0 28px;padding:0 0 24px;border-bottom:1px solid var(--line)}
 .landing .eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--accent);margin:0 0 10px}
-.landing h1.hero{font-size:34px;line-height:1.15;margin:0 0 14px;letter-spacing:-.01em;max-width:22ch}
+.landing h1.hero{font-family:'Newsreader',Georgia,serif;font-weight:600;font-size:40px;line-height:1.1;margin:0 0 14px;letter-spacing:-.015em;max-width:22ch}
 .landing p.lede{font-size:16px;line-height:1.6;color:var(--ink);max-width:64ch;margin:0 0 14px}
 .landing p.mech{font-size:15px;line-height:1.55;color:var(--muted);max-width:64ch;margin:0 0 18px}
 .landing .down{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--ink);text-decoration:none;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:8px 14px}
 .landing .down:hover{background:var(--soft)}
 .landing .byline{margin:16px 0 0;font-size:13px;color:var(--muted)}
 .landing .byline a{color:var(--muted);text-decoration:underline}
-@media (max-width:520px){.landing h1.hero{font-size:26px}}
+@media (max-width:520px){.landing h1.hero{font-size:30px}}
 </style>
 <script>try{var t=localStorage.getItem('po-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 </head><body><main>
@@ -1540,7 +1541,7 @@ textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospac
 
 <section id="tab-about" class="about" hidden>
 <h2>What this is</h2>
-<p>PatchOwner is a proof of concept. It replays the CISA Known Exploited Vulnerabilities catalog against a list of technology you run and shows which notices would have gone to whom, which stayed quiet, and why. It exists to test one idea: that fewer, owned, plainly worded notices get acted on, and floods do not.</p>
+<p>PatchOwner is a proof of concept. It replays the CISA Known Exploited Vulnerabilities catalog against a list of technology you run and shows which notices would have gone to whom, which stayed quiet, and why. It exists to test one idea: that a security notice a person actually understands is a security notice a person actually acts on. Undifferentiated CVE floods, no matter how urgent the label says they are, do not.</p>
 <h2>Read this before you rely on anything here</h2>
 <p class="caution"><b>⚠️</b> This site is for educational and testing purposes only. Recommendations shown here are not professional security advice. For vulnerabilities on the CISA KEV catalog, the default action is immediate patching per CISA guidance. Always verify against vendor advisories and consult your security team before deferring any update.</p>
 <p>Every vulnerability in this report is on the KEV catalog, which means it is being exploited in the wild right now. The urgency shown on each notice comes from a policy table that you can edit on the Policy tab. When that table says <b>Defer</b> or <b>Plan update</b>, the notice says so with a caution, because that answer is the organization's risk appetite and not CISA's guidance, not the vendor's, and not this tool's. The default table is the SEI/CERT SSVC example, used unchanged so that teams can compare; it is a worked example from a research paper, not a recommendation.</p>
