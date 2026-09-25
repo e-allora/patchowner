@@ -1,0 +1,27 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run ruff check --fix \"$CLAUDE_FILE_PATHS\" && uv run ruff format \"$CLAUDE_FILE_PATHS\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/test_gate.py",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}
