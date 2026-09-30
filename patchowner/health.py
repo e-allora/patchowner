@@ -75,7 +75,7 @@ def feed_date_from_version(catalog_version: str) -> date | None:
 
 
 def assess_health(assets: list[Asset], decisions: list[Decision], summary: Summary, *, today: date | None = None) -> Health:
-    today = today or date.today()
+    today = today or date.today()  # noqa: DTZ011 - local day on purpose; UTC would shift SSVC deadlines
     active = [a for a in assets if a.status != "retired"]
     retired = [a for a in assets if a.status == "retired"]
     checks: list[Check] = []
@@ -136,7 +136,7 @@ def assess_health(assets: list[Asset], decisions: list[Decision], summary: Summa
         checks.append(Check("KEV catalog is fresh", 0, 1, BAD, f"The cached catalog is {age} days old (version {summary.catalog_version}).",
                             "Run with --refresh. Anything CISA added since is missing from this replay."))
     else:
-        checks.append(Check("KEV catalog is fresh", 1, 1, GOOD, f"Version {summary.catalog_version}, {age} day{'s' if age != 1 else ''} old."))
+        checks.append(Check("KEV catalog is fresh", 1, 1, GOOD, f"Version {summary.catalog_version}, {age} day{'s' if age != 1 else ''} old on {today.isoformat()}."))
 
     # 5. Follow-through: was anything sent, and is anyone acting on the urgent ones?
     sent = [d for d in decisions if d.sent]
