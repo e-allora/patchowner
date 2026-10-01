@@ -153,9 +153,11 @@ docs/                     the SSVC v2 paper and screenshots
 
 - **Idea, doctrine, and product direction:** Robert Sweetman ([LinkedIn](https://www.linkedin.com/in/robert-sweetman-74602a227/), [GitHub](https://github.com/e-allora)). The PatchOwner doctrine (the project was called PatchSignal until September 2026),
   the funnel, the routing principle, and the five routing scenarios come from their design document.
-- **Implementation:** written with [Claude](https://claude.ai) (Anthropic), model Claude Fable 5.1, working in
-  [Claude Code](https://claude.com/claude-code), September 2026. Claude wrote the code, tests, and this README
-  under Robert's direction and review.
+- **Research:** began in Perplexity and was refined with Google's Gemini.
+- **Implementation:** written with [Claude](https://claude.ai) (Anthropic) in
+  [Claude Code](https://claude.com/claude-code), using the newest model available each time: Claude Fable 5.1
+  (September 2026) and Claude Opus 5.5 (from September 29, 2026), per the commit records. Claude wrote the code,
+  tests, and this README under Robert's direction and review.
 - **Decision vocabulary:** SSVC version 2.0, Software Engineering Institute, Carnegie Mellon University
   (Spring, Householder, Hatleback, Manion, Oliver, Sarvapalli, Tyzenhaus, Yarbrough, April 2021).
   Default policy table from the CERT/CC SSVC repository, unchanged.
@@ -167,3 +169,7 @@ Business Source License 1.1. Free to read, run, modify, and use inside your own 
 research, and non-production use. Not free to offer as a competing product or hosted service. Each version
 converts to Apache 2.0 four years after release (Change Date 2030-09-11 for this one). See `LICENSE`, or ask
 for a commercial license.
+
+`docs/ssvc-v2-sei-2021.pdf` is © Carnegie Mellon University (Software Engineering Institute), marked
+"[Distribution A] Approved for public release and unlimited distribution." It is included for reference under
+those terms and is not covered by this repository's license.

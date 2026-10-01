@@ -11,7 +11,6 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap');
 :root{--accent:#1e3a5f;--bg:#f7f7f5;--card:#fff;--soft:#f1f1ee;--ink:#1c1c1a;--muted:#6b6b66;--line:#e4e4df;--now:#b3261e;--soon:#b26a00;--plan:#2b6cb0;--watch:#5f6b7a;--defer:#8a8a84;--ok:#2e7d32;--lit:#fff3c4;--litline:#e0b400;--warnbg:#fff7e6;--warnline:#f1d9a5;--onink:#fff;color-scheme:light}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141412;--card:#1e1e1b;--soft:#2a2a26;--ink:#ecebe6;--muted:#a09f98;--line:#33332f;--now:#e5534b;--soon:#d9962b;--plan:#5b9cf0;--watch:#8d99a8;--defer:#8a8a84;--ok:#5bb663;--lit:#3d3410;--litline:#c9a400;--warnbg:#2e2612;--warnline:#5c4a1a;--onink:#141412;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#141412;--card:#1e1e1b;--soft:#2a2a26;--ink:#ecebe6;--muted:#a09f98;--line:#33332f;--now:#e5534b;--soon:#d9962b;--plan:#5b9cf0;--watch:#8d99a8;--defer:#8a8a84;--ok:#5bb663;--lit:#3d3410;--litline:#c9a400;--warnbg:#2e2612;--warnline:#5c4a1a;--onink:#141412;color-scheme:dark}
@@ -1582,9 +1581,9 @@ textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospac
 <h2>What is fact and what is estimate</h2>
 <p>Facts come from CISA (that a vulnerability is exploited, the vendor and product named, the required action) and from your inventory (what you run, who owns it, whether it is reachable from the internet). Estimates are PatchOwner's own: whether an advisory matches an inventory row, and whether an attack can run without a person. Every estimate is labeled under "For the auditor" on each notice, and an estimate never lowers urgency on its own. Versions are never assumed: KEV carries no version data, so no notice claims a version is affected.</p>
 <h2>What people did</h2>
-<p>The buttons on each notice record what a person did. In the hosted demo that goes to a small file on the server; in a downloaded report it stays in your browser. Nothing here sends email, opens tickets, or contacts anyone.</p>
+<p>The buttons on each notice record what a person did. When PatchOwner runs on your own server, that goes to a small file there. On patchowner.com and in a downloaded report there is no server, so it stays in your browser and is never sent. Nothing here sends email, opens tickets, or contacts anyone.</p>
 <h2>About the build</h2>
-<p>PatchOwner was built by <a href="https://www.linkedin.com/in/robert-sweetman-74602a227/">Robert Sweetman</a>. The idea, the product direction, the SSVC policy choices, and every decision about how a notice is written are mine. The code was produced in collaboration with <a href="https://claude.com/claude-code" target="_blank" rel="noopener">Claude Code</a>, Anthropic&rsquo;s coding agent, running Claude (Claude Fable 5.1, September 2026). Tests, documentation, and the report template were produced in that same collaboration under my direction.</p>
+<p>PatchOwner was built by <a href="https://www.linkedin.com/in/robert-sweetman-74602a227/">Robert Sweetman</a>. The idea, the product direction, the SSVC policy choices, and every decision about how a notice is written are mine. The code was produced in collaboration with <a href="https://claude.com/claude-code" target="_blank" rel="noopener">Claude Code</a>, Anthropic&rsquo;s coding agent, using the newest Claude model available each time: Claude Fable 5.1 (September 2026) and Claude Opus 5.5 (from late September 2026), per the commit records. The research behind it began in Perplexity and was refined with Google&rsquo;s Gemini. Tests, documentation, and the report template were produced in that same collaboration under my direction.</p>
 <p>Prioritization logic follows the <a href="https://insights.sei.cmu.edu/library/prioritizing-vulnerability-response-a-stakeholder-specific-vulnerability-categorization/" target="_blank" rel="noopener">SEI/CERT SSVC deployer tree (v2.0, Spring et al., April 2021)</a>. Exploited-vulnerability data comes from the <a href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog" target="_blank" rel="noopener">CISA Known Exploited Vulnerabilities catalog</a>. Full source is on <a href="https://github.com/e-allora/patchowner">GitHub</a> under the Business Source License 1.1.</p>
 <p>If PatchOwner is useful, or if something is wrong, <a href="https://github.com/e-allora/patchowner/issues" target="_blank" rel="noopener">open an issue</a> or reach out.</p>
 </section>
@@ -1742,7 +1741,10 @@ textarea{width:100%;box-sizing:border-box;height:160px;font:12px/1.4 ui-monospac
     if (action === 'assigned') { note = prompt('Assign to whom?') || ''; if (!note) return; }
     if (action === 'not_applicable') { note = prompt('Why does it not apply? (product not used, version not affected, already patched, isolated…)') || ''; if (!note) return; }
     let st = {action, by: who, note};
+    // patchowner.com and downloaded copies have no server: keep it in this browser, send nothing.
+    const noServer = location.protocol === 'file:' || location.hostname === 'patchowner.com' || location.hostname === 'www.patchowner.com';
     try {
+      if (noServer) throw new Error('no server');
       const res = await fetch('/act', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key: n.key, action, by: who, note})});
       if (res.ok) st = (await res.json()).state; else throw new Error('server said no');
     } catch (e) { localState[n.key] = st; try { localStorage.setItem('po-state', JSON.stringify(localState)); } catch (e2) {} }
