@@ -5,3 +5,10 @@ data/kev.json
 out/
 .pytest_cache/
 .vercel
+
+# Secrets: never commit (API keys, session secrets). Keep .env.example tracked.
+.env
+.env.*
+!.env.example
+# API key confirmations
+NVD - API Key Confirmation*.pdf
