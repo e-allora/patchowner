@@ -8,8 +8,17 @@ from patchowner.ssvc import AUTOMATABLE, POINTS, Policy, PolicyError, assess, au
 
 
 def adv(description="Remote code execution over the network."):
-    return Advisory(cve_id="CVE-2026-0001", vendor="V", product="P", name="", description=description,
-                    required_action="Apply update.", date_added=date(2026, 9, 1), due_date=None, ransomware_known=False)
+    return Advisory(
+        cve_id="CVE-2026-0001",
+        vendor="V",
+        product="P",
+        name="",
+        description=description,
+        required_action="Apply update.",
+        date_added=date(2026, 9, 1),
+        due_date=None,
+        ransomware_known=False,
+    )
 
 
 def test_default_policy_is_complete():
@@ -20,13 +29,16 @@ def test_default_policy_is_complete():
     assert len(p.rows) == expected == 72
 
 
-@pytest.mark.parametrize("values,outcome,row", [
-    (("none", "small", "no", "low"), "defer", 0),
-    (("active", "small", "no", "low"), "scheduled", 48),
-    (("active", "open", "yes", "high"), "immediate", 70),
-    (("active", "open", "no", "very high"), "immediate", 67),
-    (("active", "controlled", "yes", "medium"), "out-of-cycle", 61),
-])
+@pytest.mark.parametrize(
+    "values,outcome,row",
+    [
+        (("none", "small", "no", "low"), "defer", 0),
+        (("active", "small", "no", "low"), "scheduled", 48),
+        (("active", "open", "yes", "high"), "immediate", 70),
+        (("active", "open", "no", "very high"), "immediate", 67),
+        (("active", "controlled", "yes", "medium"), "out-of-cycle", 61),
+    ],
+)
 def test_default_policy_rows(values, outcome, row):
     assert Policy.default().outcome_for(values) == (outcome, row)
 
@@ -75,12 +87,15 @@ def test_a_person_can_confirm_it_needs_help():
     assert b.values[2] == "no" and b.steps[2].fact and b.questions == []
 
 
-@pytest.mark.parametrize("text,expected", [
-    ("allows an authenticated attacker to execute code", "authenticated attacker"),
-    ("requires user interaction to open a crafted file", "user interaction"),
-    ("allows a remote attacker to execute arbitrary code via crafted packets", ""),
-    ("could allow a remote unauthenticated attacker to cause requests", ""),
-])
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        ("allows an authenticated attacker to execute code", "authenticated attacker"),
+        ("requires user interaction to open a crafted file", "user interaction"),
+        ("allows a remote attacker to execute arbitrary code via crafted packets", ""),
+        ("could allow a remote unauthenticated attacker to cause requests", ""),
+    ],
+)
 def test_automatable_hint(text, expected):
     assert automatable_hint(text) == expected
 

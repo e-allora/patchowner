@@ -1,7 +1,8 @@
 """Health: routing coverage, exceptions, feed freshness, follow-through. No feed needed."""
+
 from datetime import date, timedelta
 
-from patchowner.decide import ACT_NOW, Delivery, Decision, Recipient, summarize
+from patchowner.decide import ACT_NOW, Decision, Delivery, Recipient, summarize
 from patchowner.health import BAD, GOOD, WARN, assess_health, feed_date_from_version
 from patchowner.inventory import parse_inventory
 from patchowner.kev import Advisory
@@ -13,16 +14,42 @@ FULL = "asset,vendor,product,version,internet_exposed,owner_email,accountable,on
 
 
 def _summary(decisions=(), catalog="2026.09.10", assets=1, warnings=(), budget=10):
-    return summarize(list(decisions), days=90, catalog_version=catalog, policy_name="p", advisories_in_window=10,
-                     assets=assets, budget=budget, warnings=list(warnings))
+    return summarize(
+        list(decisions),
+        days=90,
+        catalog_version=catalog,
+        policy_name="p",
+        advisories_in_window=10,
+        assets=assets,
+        budget=budget,
+        warnings=list(warnings),
+    )
 
 
 def _decision(asset, urgency=ACT_NOW, state=None):
-    adv = Advisory(cve_id="CVE-2026-1", vendor="V", product="P", name="n", description="d", required_action="patch",
-                   date_added=TODAY, due_date=None, ransomware_known=False)
+    adv = Advisory(
+        cve_id="CVE-2026-1",
+        vendor="V",
+        product="P",
+        name="n",
+        description="d",
+        required_action="patch",
+        date_added=TODAY,
+        due_date=None,
+        ransomware_known=False,
+    )
     m = Match(advisory=adv, asset=asset, tier="exact", score=100, reason="")
-    return Decision(match=m, urgency=urgency, urgency_reason="", recipient_email="o@x", recipient_name="O", recipient_is_fallback=False,
-                    fixers=[Recipient("o@x", "O", "fixer")], delivery=Delivery(True, "2 hours", "8 hours", "24 hours", False), state=state)
+    return Decision(
+        match=m,
+        urgency=urgency,
+        urgency_reason="",
+        recipient_email="o@x",
+        recipient_name="O",
+        recipient_is_fallback=False,
+        fixers=[Recipient("o@x", "O", "fixer")],
+        delivery=Delivery(True, "2 hours", "8 hours", "24 hours", False),
+        state=state,
+    )
 
 
 def test_complete_inventory_is_ready():
@@ -68,7 +95,10 @@ def test_expired_and_ending_exceptions():
     gone = (TODAY - timedelta(days=1)).isoformat()
     soon = (TODAY + timedelta(days=10)).isoformat()
     far = (TODAY + timedelta(days=200)).isoformat()
-    assets = parse_inventory(FULL + f"X,V,P,1.0,no,o@x,a@x,oc@x,e@x,active,{gone}\nY,V,P,1.0,no,o@x,a@x,oc@x,e@x,active,{soon}\nZ,V,P,1.0,no,o@x,a@x,oc@x,e@x,active,{far}\n")
+    assets = parse_inventory(
+        FULL
+        + f"X,V,P,1.0,no,o@x,a@x,oc@x,e@x,active,{gone}\nY,V,P,1.0,no,o@x,a@x,oc@x,e@x,active,{soon}\nZ,V,P,1.0,no,o@x,a@x,oc@x,e@x,active,{far}\n"
+    )
     h = assess_health(assets, [], _summary(), today=TODAY)
     labels = {c.label: c for c in h.checks}
     assert labels["No exception has expired"].status == BAD and "X" in labels["No exception has expired"].detail

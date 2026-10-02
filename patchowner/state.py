@@ -2,18 +2,22 @@
 
 Acknowledged is not remediated. Only 'fixed' and 'not_applicable' count as handled.
 """
+
 from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 ACTIONS = ("acknowledged", "assigned", "not_applicable", "fixed", "reopened")
 HANDLED = {"fixed", "not_applicable"}
 WORDS = {
-    "acknowledged": "Acknowledged", "assigned": "Assigned", "not_applicable": "Does not apply",
-    "fixed": "Fixed", "reopened": "Reopened",
+    "acknowledged": "Acknowledged",
+    "assigned": "Assigned",
+    "not_applicable": "Does not apply",
+    "fixed": "Fixed",
+    "reopened": "Reopened",
 }
 
 
@@ -52,7 +56,7 @@ class StateStore:
     def record(self, key: str, action: str, by: str, note: str = "", at: datetime | None = None) -> Action:
         if action not in ACTIONS:
             raise ValueError(f"'{action}' is not one of {', '.join(ACTIONS)}")
-        a = Action(action, by.strip() or "someone", note.strip(), (at or datetime.now(timezone.utc)).isoformat(timespec="seconds"))
+        a = Action(action, by.strip() or "someone", note.strip(), (at or datetime.now(UTC)).isoformat(timespec="seconds"))
         self.data.setdefault(key, []).append(a)
         self.save()
         return a

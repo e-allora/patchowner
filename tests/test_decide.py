@@ -10,9 +10,17 @@ TODAY = date(2026, 9, 9)
 
 
 def adv(description="Bad thing over the network. More.", ransomware=False):
-    return Advisory(cve_id="CVE-2026-0001", vendor="Fortinet", product="FortiOS", name="n", description=description,
-                    required_action="Apply update. Then verify.", date_added=date(2026, 9, 1), due_date=date(2026, 9, 22),
-                    ransomware_known=ransomware)
+    return Advisory(
+        cve_id="CVE-2026-0001",
+        vendor="Fortinet",
+        product="FortiOS",
+        name="n",
+        description=description,
+        required_action="Apply update. Then verify.",
+        date_added=date(2026, 9, 1),
+        due_date=date(2026, 9, 22),
+        ransomware_known=ransomware,
+    )
 
 
 def dec(tier="exact", policy=None, description="Bad thing over the network. More.", **kw):
