@@ -1,4 +1,5 @@
 """End to end against the cached KEV feed. Skips if the feed has not been downloaded."""
+
 from datetime import date
 from pathlib import Path
 
@@ -28,6 +29,7 @@ def test_example_inventory_replays_and_renders():
 def test_card_ids_line_up_with_page_data():
     import json
     import re
+
     r = run_replay(EXAMPLE.read_text(), inventory_name="example", days=90, today=date(2026, 9, 10))
     data = json.loads(re.search(r'<script id="data" type="application/json">(.*?)</script>', r.html, re.S).group(1))
     for m in re.finditer(r'<div class="card [^"]*" data-id="(\d+)" data-leaf="([^"]*)"', r.html):
@@ -36,7 +38,9 @@ def test_card_ids_line_up_with_page_data():
 
 def _policy_with_every_answer(tmp_path, answer):
     import csv
+
     from patchowner.ssvc import Policy
+
     src = Path(__file__).parent.parent / "patchowner" / "policies" / "deployer_default.csv"
     rows = list(csv.DictReader(src.open()))
     out = tmp_path / f"all_{answer}.csv"
@@ -51,14 +55,20 @@ def _policy_with_every_answer(tmp_path, answer):
 
 @pytest.mark.skipif(not DEFAULT_CACHE.exists(), reason="KEV feed not cached")
 def test_slow_answers_carry_a_simulated_recommendation_caution(tmp_path):
-    scheduled = run_replay(EXAMPLE.read_text(), inventory_name="example", days=90, today=date(2026, 9, 10),
-                           policy=_policy_with_every_answer(tmp_path, "scheduled"))
+    scheduled = run_replay(
+        EXAMPLE.read_text(),
+        inventory_name="example",
+        days=90,
+        today=date(2026, 9, 10),
+        policy=_policy_with_every_answer(tmp_path, "scheduled"),
+    )
     assert any(d.sent and d.outcome == "scheduled" for d in scheduled.decisions)
     assert "Simulated recommendation: Plan update, for testing the prioritization logic only" in scheduled.html
-    assert '<p class="caution" data-caution ><b>' in scheduled.html   # visible, not hidden
+    assert '<p class="caution" data-caution ><b>' in scheduled.html  # visible, not hidden
 
-    deferred = run_replay(EXAMPLE.read_text(), inventory_name="example", days=90, today=date(2026, 9, 10),
-                          policy=_policy_with_every_answer(tmp_path, "defer"))
+    deferred = run_replay(
+        EXAMPLE.read_text(), inventory_name="example", days=90, today=date(2026, 9, 10), policy=_policy_with_every_answer(tmp_path, "defer")
+    )
     assert all(not d.sent for d in deferred.decisions if d.outcome == "defer")
     assert "Simulated recommendation: Defer, for testing the prioritization logic only" in deferred.html
     assert "was not sent because the policy" in deferred.html
@@ -67,7 +77,7 @@ def test_slow_answers_carry_a_simulated_recommendation_caution(tmp_path):
 @pytest.mark.skipif(not DEFAULT_CACHE.exists(), reason="KEV feed not cached")
 def test_disclaimer_is_sitewide_and_on_about_tab():
     r = run_replay(EXAMPLE.read_text(), inventory_name="example", days=90, today=date(2026, 9, 10))
-    assert r.html.count("This site is for educational and testing purposes only") == 2   # About tab and footer
-    assert "Demo for testing the prioritization logic only" in r.html                     # banner
+    assert r.html.count("This site is for educational and testing purposes only") == 2  # About tab and footer
+    assert "Demo for testing the prioritization logic only" in r.html  # banner
     assert 'id="tab-about"' in r.html and "Business Source License" in r.html
-    assert "Demo only, not security advice" in r.html                                     # share text
+    assert "Demo only, not security advice" in r.html  # share text

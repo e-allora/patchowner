@@ -1,19 +1,26 @@
 """Upload a CSV, get the replay page. The whole web demo."""
+
 from __future__ import annotations
 
+import html
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .engine import run_replay
-from .report import BANNER, SITEWIDE
 from .inventory import OPTIONAL, REQUIRED, InventoryError
+from .kev import FeedError
+from .report import BANNER, SITEWIDE
 from .state import ACTIONS, StateStore
 
 app = FastAPI(title="PatchOwner demo")
 _store = StateStore("out/state.json")
+
+MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # an inventory CSV is a few KB; anything bigger is a mistake, not a list of assets
+MIN_DAYS, MAX_DAYS = 1, 3650
+DEFAULT_FALLBACK = "security@example.com"
 
 
 def configure(state_path: str | Path) -> None:
@@ -22,10 +29,10 @@ def configure(state_path: str | Path) -> None:
 
 
 class Act(BaseModel):
-    key: str
-    action: str
-    by: str = ""
-    note: str = ""
+    key: str = Field(min_length=1, max_length=500)
+    action: str = Field(max_length=50)
+    by: str = Field(default="", max_length=200)
+    note: str = Field(default="", max_length=2000)
 
 
 @app.post("/act")
@@ -33,7 +40,10 @@ def act(a: Act) -> JSONResponse:
     if a.action not in ACTIONS:
         return JSONResponse({"ok": False, "error": f"unknown action; use one of {', '.join(ACTIONS)}"}, status_code=400)
     rec = _store.record(a.key, a.action, a.by, a.note)
-    return JSONResponse({"ok": True, "state": {"action": rec.action, "by": rec.by, "note": rec.note, "at": rec.at, "sentence": rec.sentence}})
+    return JSONResponse(
+        {"ok": True, "state": {"action": rec.action, "by": rec.by, "note": rec.note, "at": rec.at, "sentence": rec.sentence}}
+    )
+
 
 FORM = """<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PatchOwner</title>
@@ -61,8 +71,9 @@ button{margin-top:18px;font:inherit;font-weight:600;background:var(--ink);color:
 def _form(error: str = "") -> str:
     # str.format is not used here: the CSS braces would collide with it.
     return (
-        FORM.replace("@@BANNER@@", BANNER).replace("@@SITEWIDE@@", SITEWIDE)
-        .replace("@@ERROR@@", f'<div class="err">{error}</div>' if error else "")
+        FORM.replace("@@BANNER@@", BANNER)
+        .replace("@@SITEWIDE@@", SITEWIDE)
+        .replace("@@ERROR@@", f'<div class="err">{html.escape(error)}</div>' if error else "")
         .replace("@@REQUIRED@@", ", ".join(f"<code>{c}</code>" for c in REQUIRED))
         .replace("@@OPTIONAL@@", ", ".join(f"<code>{c}</code>" for c in OPTIONAL))
     )
@@ -74,8 +85,15 @@ def index() -> str:
 
 
 @app.post("/replay", response_class=HTMLResponse)
-async def replay(inventory: UploadFile = File(...), days: int = Form(90), fallback: str = Form("security@example.com")) -> str:
-    raw = await inventory.read()
+async def replay(inventory: UploadFile = File(...), days: int = Form(90), fallback: str = Form(DEFAULT_FALLBACK)) -> str:
+    if not MIN_DAYS <= days <= MAX_DAYS:
+        return _form(f"Look back must be between {MIN_DAYS} and {MAX_DAYS} days.")
+    fallback = fallback.strip().lower() or DEFAULT_FALLBACK
+    raw = await inventory.read(MAX_UPLOAD_BYTES + 1)
+    if len(raw) > MAX_UPLOAD_BYTES:
+        return _form(
+            f"That file is larger than {MAX_UPLOAD_BYTES // (1024 * 1024)} MB. An inventory CSV should be far smaller; check you picked the right file."
+        )
     try:
         text = raw.decode("utf-8-sig")
     except UnicodeDecodeError:
@@ -83,5 +101,7 @@ async def replay(inventory: UploadFile = File(...), days: int = Form(90), fallba
     try:
         r = run_replay(text, inventory_name=inventory.filename or "inventory.csv", days=days, fallback_email=fallback, state=_store)
     except InventoryError as e:
+        return _form(str(e))
+    except FeedError as e:
         return _form(str(e))
     return r.html

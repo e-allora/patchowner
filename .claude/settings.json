@@ -6,8 +6,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run ruff check --fix \"$CLAUDE_FILE_PATHS\" && uv run ruff format \"$CLAUDE_FILE_PATHS\"",
-            "timeout": 15
+            "command": "python3 .claude/hooks/lint_changed.py",
+            "timeout": 30
           }
         ]
       }

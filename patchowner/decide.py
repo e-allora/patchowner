@@ -1,4 +1,5 @@
 """Turn matches into decisions: SSVC outcome, urgency words, recipient, escalation, suppression."""
+
 from __future__ import annotations
 
 from collections import Counter, defaultdict
@@ -26,6 +27,7 @@ WHEN_TEXT = {
 @dataclass(frozen=True)
 class Delivery:
     """What an outcome means for people. This is the THEN half of a policy, and it lives on the leaf."""
+
     notify_oncall: bool
     acknowledge_within: str
     plan_within: str
@@ -64,15 +66,15 @@ class Decision:
     recipient_email: str
     recipient_name: str
     recipient_is_fallback: bool
-    assessment: Assessment | None = None   # None for "possible" matches: no path until a human confirms
+    assessment: Assessment | None = None  # None for "possible" matches: no path until a human confirms
     outcome: str | None = None
     policy_row: int | None = None
     vector: str = ""
-    fixers: list[Recipient] = field(default_factory=list)      # get the full card
-    accountable: Recipient | None = None                       # gets one status line
-    escalation: Recipient | None = None                        # hears only if unresolved
+    fixers: list[Recipient] = field(default_factory=list)  # get the full card
+    accountable: Recipient | None = None  # gets one status line
+    escalation: Recipient | None = None  # hears only if unresolved
     delivery: Delivery = WATCH_DELIVERY
-    state: Action | None = None                # what a person last did about it
+    state: Action | None = None  # what a person last did about it
     history: list[Action] = field(default_factory=list)
     suppressed_reason: str | None = None
     facts: list[str] = field(default_factory=list)
@@ -176,8 +178,14 @@ def _suppression(m: Match, today: date) -> str | None:
     return None
 
 
-def decide(matches: list[Match], fallback_email: str, fallback_name: str = "Security team",
-           today: date | None = None, policy: Policy | None = None, state: StateStore | None = None) -> list[Decision]:
+def decide(
+    matches: list[Match],
+    fallback_email: str,
+    fallback_name: str = "Security team",
+    today: date | None = None,
+    policy: Policy | None = None,
+    state: StateStore | None = None,
+) -> list[Decision]:
     today = today or date.today()
     policy = policy or Policy.default()
     state = state or StateStore(None)
@@ -189,8 +197,15 @@ def decide(matches: list[Match], fallback_email: str, fallback_name: str = "Secu
         else:
             email, name, fb = fallback_email, fallback_name, True
 
-        d = Decision(match=m, urgency=WATCH, urgency_reason="", recipient_email=email, recipient_name=name,
-                     recipient_is_fallback=fb, suppressed_reason=_suppression(m, today))
+        d = Decision(
+            match=m,
+            urgency=WATCH,
+            urgency_reason="",
+            recipient_email=email,
+            recipient_name=name,
+            recipient_is_fallback=fb,
+            suppressed_reason=_suppression(m, today),
+        )
         if m.tier == "possible":
             d.urgency_reason = f"match is only possible: {m.reason}"
         else:
@@ -225,7 +240,8 @@ def decide(matches: list[Match], fallback_email: str, fallback_name: str = "Secu
             d.facts.append(f"Federal remediation due date: {adv.due_date.isoformat()}.")
         d.estimates.append(f"Product match is {m.tier}: {m.reason}.")
         d.estimates.append(
-            f"Version {a.version} was not checked; the CISA feed does not list affected versions." if a.version
+            f"Version {a.version} was not checked; the CISA feed does not list affected versions."
+            if a.version
             else "No version recorded for this asset, so affected-version status is unknown."
         )
         if fb:
@@ -248,15 +264,24 @@ class Summary:
     unowned: int
     by_urgency: dict[str, int]
     by_recipient: dict[str, list[Decision]]
-    by_person: dict[str, dict]           # email -> {name, fixer, status, escalation}
+    by_person: dict[str, dict]  # email -> {name, fixer, status, escalation}
     status_lines: dict[str, list[Decision]]  # accountable email -> notices
-    by_state: dict[str, int]                 # open | acknowledged | assigned | fixed
+    by_state: dict[str, int]  # open | acknowledged | assigned | fixed
     over_budget: dict[str, int]
     warnings: list[str]
 
 
-def summarize(decisions: list[Decision], *, days: int, catalog_version: str, policy_name: str, advisories_in_window: int,
-              assets: int, budget: int, warnings: list[str]) -> Summary:
+def summarize(
+    decisions: list[Decision],
+    *,
+    days: int,
+    catalog_version: str,
+    policy_name: str,
+    advisories_in_window: int,
+    assets: int,
+    budget: int,
+    warnings: list[str],
+) -> Summary:
     sent = [d for d in decisions if d.sent]
     by_rec: dict[str, list[Decision]] = defaultdict(list)
     for d in sent:
@@ -282,9 +307,14 @@ def summarize(decisions: list[Decision], *, days: int, catalog_version: str, pol
         if d.escalation:
             bump(d.escalation, "escalation")
     return Summary(
-        days=days, catalog_version=catalog_version, policy_name=policy_name, advisories_in_window=advisories_in_window,
-        assets=assets, relevant_advisories=len({d.match.advisory.cve_id for d in decisions}),
-        sent=len(sent), suppressed=len(decisions) - len(sent),
+        days=days,
+        catalog_version=catalog_version,
+        policy_name=policy_name,
+        advisories_in_window=advisories_in_window,
+        assets=assets,
+        relevant_advisories=len({d.match.advisory.cve_id for d in decisions}),
+        sent=len(sent),
+        suppressed=len(decisions) - len(sent),
         unowned=sum(1 for d in sent if d.recipient_is_fallback),
         by_urgency={u: sum(1 for d in sent if d.urgency == u) for u in (ACT_NOW, UPDATE_SOON, PLAN_UPDATE, WATCH)},
         by_recipient=dict(sorted(by_rec.items(), key=lambda kv: -len(kv[1]))),

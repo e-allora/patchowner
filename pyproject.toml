@@ -20,6 +20,7 @@ patchowner = "patchowner.cli:main"
 dev = [
     "httpx>=0.28.1",
     "pytest>=8",
+    "ruff>=0.6",
 ]
 
 [build-system]
@@ -31,3 +32,15 @@ packages = ["patchowner"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 140
+target-version = "py312"
+extend-exclude = ["docs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501"]  # long lines are a style choice here; the limit above is for ruff format
+
+[tool.ruff.lint.per-file-ignores]
+"patchowner/web.py" = ["B008"]  # File(...) / Form(...) in defaults is how FastAPI declares parameters

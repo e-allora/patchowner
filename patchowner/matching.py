@@ -3,6 +3,7 @@
 Tiers: exact, likely, possible, none. KEV carries no version data, so a match
 never claims a specific version is affected; that is stated on every alert.
 """
+
 from __future__ import annotations
 
 import re
@@ -79,8 +80,23 @@ def vendor_matches(inv_vendor: str, kev_vendor: str, kev_product: str) -> bool:
 
 
 GENERIC_PRODUCT_TOKENS = {
-    "server", "servers", "appliance", "appliances", "platform", "edition", "enterprise", "suite",
-    "os", "software", "product", "products", "service", "services", "system", "systems", "core",
+    "server",
+    "servers",
+    "appliance",
+    "appliances",
+    "platform",
+    "edition",
+    "enterprise",
+    "suite",
+    "os",
+    "software",
+    "product",
+    "products",
+    "service",
+    "services",
+    "system",
+    "systems",
+    "core",
 }
 
 

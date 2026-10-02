@@ -1,4 +1,5 @@
 """Inventory: the customer's list of technology they care about, from a CSV."""
+
 from __future__ import annotations
 
 import csv
@@ -8,9 +9,21 @@ from datetime import date
 
 REQUIRED = ("asset", "vendor", "product")
 OPTIONAL = (
-    "version", "environment", "internet_exposed", "criticality",
-    "owner_name", "owner_email", "team", "status", "exception_until", "exception_reason",
-    "exposure", "human_impact", "escalate_to", "accountable", "oncall",
+    "version",
+    "environment",
+    "internet_exposed",
+    "criticality",
+    "owner_name",
+    "owner_email",
+    "team",
+    "status",
+    "exception_until",
+    "exception_reason",
+    "exposure",
+    "human_impact",
+    "escalate_to",
+    "accountable",
+    "oncall",
 )
 EXPOSURE_VALUES = {"small", "controlled", "open"}
 HUMAN_IMPACT_VALUES = {"low", "medium", "high", "very high"}
@@ -32,11 +45,11 @@ class Asset:
     status: str = "active"
     exception_until: date | None = None
     exception_reason: str = ""
-    exposure: str = ""       # SSVC System Exposure override: small | controlled | open
-    human_impact: str = ""   # SSVC Human Impact override: low | medium | high | very high
-    escalate_to: str = ""    # hears about it only if it is stuck
-    accountable: str = ""    # gets a one-line status, never the technical detail
-    oncall: str = ""         # joins the fixer on Act now
+    exposure: str = ""  # SSVC System Exposure override: small | controlled | open
+    human_impact: str = ""  # SSVC Human Impact override: low | medium | high | very high
+    escalate_to: str = ""  # hears about it only if it is stuck
+    accountable: str = ""  # gets a one-line status, never the technical detail
+    oncall: str = ""  # joins the fixer on Act now
     row: int = 0
     warnings: list[str] = field(default_factory=list)
 
@@ -65,8 +78,7 @@ def parse_inventory(text: str) -> list[Asset]:
     missing = [c for c in REQUIRED if c not in headers]
     if missing:
         raise InventoryError(
-            f"Missing required column(s): {', '.join(missing)}. "
-            f"Required: {', '.join(REQUIRED)}. Optional: {', '.join(OPTIONAL)}."
+            f"Missing required column(s): {', '.join(missing)}. Required: {', '.join(REQUIRED)}. Optional: {', '.join(OPTIONAL)}."
         )
 
     def get(rowd: dict, key: str) -> str:

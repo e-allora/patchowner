@@ -1,5 +1,7 @@
 # PatchOwner
 
+[![CI](https://github.com/e-allora/patchowner/actions/workflows/ci.yml/badge.svg)](https://github.com/e-allora/patchowner/actions/workflows/ci.yml)
+
 **Only verified, relevant, actionable vulnerability notices, routed to the person who can act.**
 
 Upload a list of the technology you run. PatchOwner replays the CISA Known Exploited Vulnerabilities (KEV)
@@ -37,12 +39,14 @@ When the policy answers Defer or Plan update, the notice carries the caution inl
 uv sync
 uv run patchowner replay examples/inventory.csv        # writes out/report.html, open it in a browser
 uv run patchowner serve                                # http://127.0.0.1:8000, upload a CSV
-uv run pytest                                           # 86 tests, including the five routing scenarios from the design doc
+uv run pytest                                           # 101 tests, including the five routing scenarios from the design doc
 uv run patchowner replay examples/inventory.csv --policy my_policy.csv   # your own risk appetite
 ```
 
-The KEV feed is downloaded once to `data/kev.json`. Add `--refresh` to re-download.
-Needs Python 3.12 or newer and [uv](https://docs.astral.sh/uv/).
+The KEV feed is downloaded once to `data/kev.json`. Add `--refresh` to re-download. If the download fails,
+the command says so in one sentence and exits 3; nothing else is touched. Four tests replay the real catalog
+and skip until that file exists.
+Needs [uv](https://docs.astral.sh/uv/) and Python 3.12 or 3.13 (pinned to 3.12 in `.python-version`; CI runs both).
 
 ## What is in the report
 
@@ -146,7 +150,9 @@ patchowner/report.py     HTML rendering (templates/report.html), share text
 patchowner/engine.py     one call that runs the replay
 patchowner/cli.py        `patchowner replay` and `patchowner serve`
 patchowner/web.py        upload form and the /act endpoint
+site/                     the static copy served at patchowner.com; a build artifact, see site/README.md
 docs/                     the SSVC v2 paper and screenshots
+docs/design/db/           schema sketch for a possible hosted version; not wired in, not a dependency
 ```
 
 ## Credits
