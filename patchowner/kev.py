@@ -1,7 +1,9 @@
 """CISA Known Exploited Vulnerabilities feed: download, cache, and filter."""
+
 from __future__ import annotations
 
 import json
+import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from datetime import date, timedelta
@@ -9,6 +11,10 @@ from pathlib import Path
 
 KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
 DEFAULT_CACHE = Path(__file__).resolve().parent.parent / "data" / "kev.json"
+
+
+class FeedError(RuntimeError):
+    """The KEV catalog could not be downloaded or read. The message is written for the person running the tool."""
 
 
 @dataclass(frozen=True)
@@ -58,9 +64,25 @@ def load_feed(cache: Path = DEFAULT_CACHE, refresh: bool = False, timeout: int =
     """Return (advisories, catalog_version). Downloads when the cache is missing or refresh is set."""
     if refresh or not cache.exists():
         cache.parent.mkdir(parents=True, exist_ok=True)
-        with urllib.request.urlopen(KEV_URL, timeout=timeout) as resp:  # noqa: S310 - fixed https URL
-            cache.write_bytes(resp.read())
-    raw = json.loads(cache.read_text())
+        try:
+            with urllib.request.urlopen(KEV_URL, timeout=timeout) as resp:  # noqa: S310 - fixed https URL
+                body = resp.read()
+        except (urllib.error.URLError, TimeoutError, OSError) as e:
+            raise FeedError(
+                f"Could not download the CISA KEV catalog from {KEV_URL} ({e}). "
+                f"Check the network connection, or place a previously downloaded copy at {cache}."
+            ) from e
+        try:
+            json.loads(body)
+        except ValueError as e:
+            raise FeedError(f"The download from {KEV_URL} was not valid JSON ({e}). The existing cache, if any, was left untouched.") from e
+        cache.write_bytes(body)
+    try:
+        raw = json.loads(cache.read_text())
+    except ValueError as e:
+        raise FeedError(f"The cached catalog at {cache} is not valid JSON ({e}). Delete it or run with --refresh.") from e
+    if not isinstance(raw, dict) or "vulnerabilities" not in raw:
+        raise FeedError(f"The catalog at {cache} does not look like the CISA KEV feed (no 'vulnerabilities' key). Run with --refresh.")
     return parse_feed(raw), str(raw.get("catalogVersion", "unknown"))
 
 

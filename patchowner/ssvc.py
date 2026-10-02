@@ -3,6 +3,7 @@
 Decision points and their values are the SEI/CERT vocabulary and are not customizable.
 The outcome label on each row of a policy is the organization's risk appetite and is.
 """
+
 from __future__ import annotations
 
 import csv
@@ -20,37 +21,58 @@ DEFAULT_POLICY = POLICY_DIR / "deployer_default.csv"
 
 @dataclass(frozen=True)
 class DecisionPoint:
-    name: str                    # SSVC name, fixed vocabulary, shown to auditors
-    key: str                     # abbreviated-vector key per SSVC v2 "Communication Formats"
-    values: tuple[str, ...]      # SSVC values, fixed vocabulary
+    name: str  # SSVC name, fixed vocabulary, shown to auditors
+    key: str  # abbreviated-vector key per SSVC v2 "Communication Formats"
+    values: tuple[str, ...]  # SSVC values, fixed vocabulary
     abbrev: dict[str, str]
-    question: str                # the same question in plain words, shown to people
-    plain: dict[str, str]        # SSVC value -> plain words
-    clause: dict[str, str]       # SSVC value -> "because ..." clause for one-sentence explanations
+    question: str  # the same question in plain words, shown to people
+    plain: dict[str, str]  # SSVC value -> plain words
+    clause: dict[str, str]  # SSVC value -> "because ..." clause for one-sentence explanations
 
     def word(self, value: str) -> str:
         return self.plain[value]
 
 
 EXPLOITATION = DecisionPoint(
-    "Exploitation", "E", ("none", "public poc", "active"), {"none": "N", "public poc": "P", "active": "A"},
-    "Is it being attacked?", {"none": "no", "public poc": "a proof exists", "active": "yes, right now"},
+    "Exploitation",
+    "E",
+    ("none", "public poc", "active"),
+    {"none": "N", "public poc": "P", "active": "A"},
+    "Is it being attacked?",
+    {"none": "no", "public poc": "a proof exists", "active": "yes, right now"},
     {"none": "nobody is attacking it", "public poc": "a public proof of attack exists", "active": "attackers are using it right now"},
 )
 EXPOSURE = DecisionPoint(
-    "System Exposure", "Se", ("small", "controlled", "open"), {"small": "S", "controlled": "C", "open": "O"},
-    "Can attackers reach it?", {"small": "isolated", "controlled": "from inside only", "open": "from the internet"},
+    "System Exposure",
+    "Se",
+    ("small", "controlled", "open"),
+    {"small": "S", "controlled": "C", "open": "O"},
+    "Can attackers reach it?",
+    {"small": "isolated", "controlled": "from inside only", "open": "from the internet"},
     {"small": "it's isolated", "controlled": "it's reachable only from inside", "open": "it's reachable from the internet"},
 )
 AUTOMATABLE = DecisionPoint(
-    "Automatable", "A", ("no", "yes"), {"no": "N", "yes": "Y"},
-    "Can the attack run by itself?", {"no": "no, it needs a person", "yes": "yes"},
+    "Automatable",
+    "A",
+    ("no", "yes"),
+    {"no": "N", "yes": "Y"},
+    "Can the attack run by itself?",
+    {"no": "no, it needs a person", "yes": "yes"},
     {"no": "the attack needs a person's help", "yes": "the attack can run by itself"},
 )
 HUMAN_IMPACT = DecisionPoint(
-    "Human Impact", "H", ("low", "medium", "high", "very high"), {"low": "L", "medium": "M", "high": "H", "very high": "Vh"},
-    "How much would it hurt?", {"low": "a little", "medium": "some", "high": "a lot", "very high": "business-stopping"},
-    {"low": "it would hurt a little", "medium": "it would hurt some", "high": "it would hurt a lot", "very high": "it could stop the business"},
+    "Human Impact",
+    "H",
+    ("low", "medium", "high", "very high"),
+    {"low": "L", "medium": "M", "high": "H", "very high": "Vh"},
+    "How much would it hurt?",
+    {"low": "a little", "medium": "some", "high": "a lot", "very high": "business-stopping"},
+    {
+        "low": "it would hurt a little",
+        "medium": "it would hurt some",
+        "high": "it would hurt a lot",
+        "very high": "it could stop the business",
+    },
 )
 POINTS: tuple[DecisionPoint, ...] = (EXPLOITATION, EXPOSURE, AUTOMATABLE, HUMAN_IMPACT)
 OUTCOMES: tuple[str, ...] = ("defer", "scheduled", "out-of-cycle", "immediate")
@@ -58,9 +80,21 @@ OUTCOME_WORDS = {"defer": "Defer", "scheduled": "Plan update", "out-of-cycle": "
 
 CRITICALITY_TO_IMPACT = {"low": "low", "medium": "medium", "high": "high", "critical": "very high"}
 NOT_AUTOMATABLE_HINTS = (  # most specific first: the first hit is quoted in the question to a person
-    "authenticated attacker", "authenticated user", "user interaction", "physical access", "local attacker",
-    "local user", "valid credentials", "crafted file", "malicious file", "an authenticated", "locally",
-    "convince", "tricking", "opening a", "open a",
+    "authenticated attacker",
+    "authenticated user",
+    "user interaction",
+    "physical access",
+    "local attacker",
+    "local user",
+    "valid credentials",
+    "crafted file",
+    "malicious file",
+    "an authenticated",
+    "locally",
+    "convince",
+    "tricking",
+    "opening a",
+    "open a",
 )
 
 
@@ -85,7 +119,7 @@ class Assessment:
     def leaf_key(self) -> str:
         return "|".join(self.values)
 
-    def with_value(self, point: DecisionPoint, value: str) -> "Assessment":
+    def with_value(self, point: DecisionPoint, value: str) -> Assessment:
         return Assessment(tuple(s if s.point is not point else Step(point, value, "confirmed by a person", True) for s in self.steps))
 
     @property
@@ -120,12 +154,12 @@ class Policy:
     header: list[str]
 
     @classmethod
-    def load(cls, path: Path | str, name: str | None = None) -> "Policy":
+    def load(cls, path: Path | str, name: str | None = None) -> Policy:
         path = Path(path)
         return cls.parse(path.read_text(), name or path.stem)
 
     @classmethod
-    def parse(cls, text: str, name: str) -> "Policy":
+    def parse(cls, text: str, name: str) -> Policy:
         reader = csv.reader(io.StringIO(text))
         header = next(reader, None)
         if not header or len(header) != 2 + len(POINTS):
@@ -134,10 +168,15 @@ class Policy:
         for line_no, line in enumerate(reader, start=2):
             if not line or not any(c.strip() for c in line):
                 continue
-            row_num = int(line[0])
-            values = tuple(c.strip().lower() for c in line[1:1 + len(POINTS)])
+            if len(line) != 2 + len(POINTS):
+                raise PolicyError(f"Line {line_no}: expected {2 + len(POINTS)} columns, found {len(line)}.")
+            try:
+                row_num = int(line[0])
+            except ValueError:
+                raise PolicyError(f"Line {line_no}: the first column must be the row number, not '{line[0]}'.") from None
+            values = tuple(c.strip().lower() for c in line[1 : 1 + len(POINTS)])
             outcome = line[1 + len(POINTS)].strip().lower()
-            for p, v in zip(POINTS, values):
+            for p, v in zip(POINTS, values, strict=True):
                 if v not in p.values:
                     raise PolicyError(f"Line {line_no}: '{v}' is not a valid {p.name} value ({', '.join(p.values)}).")
             if outcome not in OUTCOMES:
@@ -151,7 +190,7 @@ class Policy:
         return cls(name=name, rows=rows, header=header)
 
     @classmethod
-    def default(cls) -> "Policy":
+    def default(cls) -> Policy:
         return cls.load(DEFAULT_POLICY, "SEI deployer tree (default)")
 
     def evaluate(self, a: Assessment) -> Outcome:
@@ -192,11 +231,15 @@ def assess(adv: Advisory, asset: Asset) -> Assessment:
         steps.append(Step(EXPOSURE, "controlled", "not internet-facing; assumed reachable from the internal network", False))
 
     hint = automatable_hint(adv.description)
-    steps.append(Step(
-        AUTOMATABLE, "yes",
-        "assumed the attack can run by itself, the worst case, until a person says otherwise", False,
-        question=f"CISA's text mentions “{hint}”. Does this attack need a person's help?" if hint else None,
-    ))
+    steps.append(
+        Step(
+            AUTOMATABLE,
+            "yes",
+            "assumed the attack can run by itself, the worst case, until a person says otherwise",
+            False,
+            question=f"CISA's text mentions “{hint}”. Does this attack need a person's help?" if hint else None,
+        )
+    )
 
     if asset.human_impact:
         steps.append(Step(HUMAN_IMPACT, asset.human_impact, "human impact set explicitly in the inventory", True))
